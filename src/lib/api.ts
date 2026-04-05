@@ -157,4 +157,16 @@ export const api = {
   getSavingMovements: (id: string) =>
     request(`/savings/${id}/movements`),
   getSavingsSummary: () => request('/savings/summary/total'),
+
+  // Notifications
+  sendNotification: (data: { title: string; message: string; type: string; target: string; target_user_id?: string }) =>
+    request('/notifications', { method: 'POST', body: JSON.stringify(data) }),
+  getNotificationHistory: () => request('/notifications/history'),
+  deleteNotification: (id: string) =>
+    request(`/notifications/${id}`, { method: 'DELETE' }),
+  getMyNotifications: () => request('/notifications/mine'),
+  markNotificationRead: (id: string) =>
+    request(`/notifications/${id}/read`, { method: 'POST' }),
+  markAllNotificationsRead: () =>
+    request('/notifications/read-all', { method: 'POST' }),
 };
