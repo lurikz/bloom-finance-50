@@ -62,6 +62,10 @@ export default function Categories() {
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editDialog) return;
+    if (!/^#[0-9A-F]{6}$/i.test(editColor)) {
+      toast({ title: 'Escolha uma cor válida', variant: 'destructive' });
+      return;
+    }
     try {
       await api.updateCategory(editDialog.id, { name: editName.trim() || undefined, color: editColor });
       toast({ title: 'Categoria atualizada!' });
