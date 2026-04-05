@@ -61,8 +61,16 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/reports', reportRoutes);
 
-// Health check
-app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+// Health check (includes DB connectivity test)
+app.get('/api/health', async (req, res) => {
+  try {
+    const { pool } = require('./db/connection');
+    await pool.query('SELECT 1');
+    res.json({ status: 'ok', db: 'connected' });
+  } catch (err) {
+    res.status(500).json({ status: 'error', db: 'disconnected', error: err.message });
+  }
+});
 
 // Error handler
 app.use((err, req, res, next) => {
