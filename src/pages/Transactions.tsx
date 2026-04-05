@@ -484,8 +484,22 @@ export default function Transactions() {
               <p className="text-center py-8 text-muted-foreground">Nenhuma transação</p>
             ) : (
               <div className="divide-y divide-border">
+                {transactions.length > 0 && (
+                  <div className="p-3 flex items-center gap-2 border-b border-border bg-muted/30">
+                    <Checkbox
+                      checked={selectedIds.size === transactions.length}
+                      onCheckedChange={toggleAll}
+                    />
+                    <span className="text-xs text-muted-foreground">Selecionar todas</span>
+                  </div>
+                )}
                 {transactions.map((t) => (
-                  <div key={t.id} className="p-4 flex items-center gap-3">
+                  <div key={t.id} className={`p-4 flex items-center gap-3 ${selectedIds.has(t.id) ? 'bg-muted/50' : ''}`}>
+                    <Checkbox
+                      checked={selectedIds.has(t.id)}
+                      onCheckedChange={() => toggleSelect(t.id)}
+                      className="shrink-0"
+                    />
                     <div className={`shrink-0 flex items-center justify-center h-10 w-10 rounded-full ${t.type === 'income' ? 'bg-accent' : 'bg-destructive/10'}`}>
                       {t.type === 'income' ? <TrendingUp className="h-4 w-4 text-accent-foreground" /> : <TrendingDown className="h-4 w-4 text-destructive" />}
                     </div>

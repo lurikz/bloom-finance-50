@@ -148,6 +148,25 @@ router.put('/:id', [
   }
 });
 
+// Bulk Delete
+router.post('/bulk-delete', async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0 || ids.length > 100) {
+      return res.status(400).json({ message: 'Envie entre 1 e 100 IDs para exclusão' });
+    }
+    const placeholders = ids.map((_, i) => `$${i + 2}`).join(',');
+    const result = await pool.query(
+      `DELETE FROM transactions WHERE id IN (${placeholders}) AND user_id = $1 RETURNING id`,
+      [req.userId, ...ids]
+    );
+    res.json({ message: `${result.rowCount} transação(ões) excluída(s)`, deleted: result.rowCount });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Erro ao excluir transações' });
+  }
+});
+
 // Delete
 router.delete('/:id', async (req, res) => {
   try {
