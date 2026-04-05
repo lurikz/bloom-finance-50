@@ -31,6 +31,8 @@ export default function Transactions() {
   const { toast } = useToast();
 
   const [form, setForm] = useState({ description: '', amount: '', type: 'expense' as 'income' | 'expense', category_id: '', date: new Date().toISOString().split('T')[0] });
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurrenceMonths, setRecurrenceMonths] = useState('12');
 
   const load = () => {
     setLoading(true);
