@@ -362,14 +362,14 @@ export default function Admin() {
               <Select value={subMonth} onValueChange={setSubMonth}>
                 <SelectTrigger className="w-[140px]"><SelectValue placeholder="Mês" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os meses</SelectItem>
+                  <SelectItem value="all">Todos os meses</SelectItem>
                   {MONTH_NAMES.map((m, i) => <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>)}
                 </SelectContent>
               </Select>
               <Select value={subYear} onValueChange={setSubYear}>
                 <SelectTrigger className="w-[110px]"><SelectValue placeholder="Ano" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
                   {[2024, 2025, 2026, 2027].map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
                 </SelectContent>
               </Select>
