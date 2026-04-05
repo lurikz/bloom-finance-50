@@ -14,6 +14,7 @@ export function AppLayout() {
     { to: '/categories', icon: Tags, label: 'Categorias' },
     { to: '/fixed-expenses', icon: Repeat, label: 'Gastos Fixos' },
     { to: '/reports', icon: FileText, label: 'Relatórios' },
+    { to: '/settings', icon: UserCog, label: 'Meu Perfil' },
     ...(isAdmin ? [{ to: '/admin', icon: Settings, label: 'Admin' }] : []),
   ];
 
