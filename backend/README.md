@@ -23,10 +23,9 @@ FRONTEND_URL=https://seu-frontend.com
 5. Expor a porta 3001
 
 ### 4. Inicializar o banco
-Após o deploy, rode uma vez:
-```bash
-npm run db:init
-```
+O backend agora executa a inicialização automaticamente no `prestart`, incluindo criação da tabela `fixed_expenses` e da coluna `transactions.fixed_expense_id` quando ainda não existirem.
+
+Se o serviço já existia antes dessas mudanças, faça um **rebuild/redeploy completo** para aplicar a atualização do schema.
 
 ### 5. Frontend
 No frontend, configure a variável:

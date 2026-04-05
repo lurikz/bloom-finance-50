@@ -66,7 +66,7 @@ export default function Categories() {
             <Button className="gap-2"><Plus className="h-4 w-4" /> Nova</Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>Nova categoria</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>Nova categoria</DialogTitle><DialogDescription>Crie uma categoria personalizada para entradas ou saídas.</DialogDescription></DialogHeader>
             <form onSubmit={handleCreate} className="space-y-4">
               <div className="space-y-2">
                 <Label>Nome</Label>

@@ -128,7 +128,7 @@ export default function FixedExpenses() {
             <Button onClick={openCreate} className="gap-2"><Plus className="h-4 w-4" /> Novo Gasto Fixo</Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>{editing ? 'Editar Gasto Fixo' : 'Novo Gasto Fixo'}</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{editing ? 'Editar Gasto Fixo' : 'Novo Gasto Fixo'}</DialogTitle><DialogDescription>{editing ? 'Atualize a recorrência e os dados do gasto fixo.' : 'Crie um gasto recorrente mensal e gere suas transações.'}</DialogDescription></DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label>Descrição</Label>

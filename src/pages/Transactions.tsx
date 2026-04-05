@@ -131,7 +131,7 @@ export default function Transactions() {
               <Button onClick={openCreate} className="gap-2"><Plus className="h-4 w-4" /> Nova</Button>
             </DialogTrigger>
             <DialogContent>
-              <DialogHeader><DialogTitle>{editing ? 'Editar transação' : 'Nova transação'}</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle>{editing ? 'Editar transação' : 'Nova transação'}</DialogTitle><DialogDescription>{editing ? 'Atualize os dados da transação.' : 'Cadastre uma nova entrada ou saída.'}</DialogDescription></DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label>Descrição</Label>

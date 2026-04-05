@@ -52,9 +52,10 @@ async function ensureDatabaseInitialized() {
         category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
         user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         date DATE NOT NULL,
-        fixed_expense_id UUID REFERENCES fixed_expenses(id) ON DELETE SET NULL,
         created_at TIMESTAMP DEFAULT NOW()
       );
+
+      ALTER TABLE transactions ADD COLUMN IF NOT EXISTS fixed_expense_id UUID REFERENCES fixed_expenses(id) ON DELETE SET NULL;
 
       CREATE INDEX IF NOT EXISTS idx_transactions_user_date ON transactions(user_id, date);
       CREATE INDEX IF NOT EXISTS idx_categories_user ON categories(user_id);
