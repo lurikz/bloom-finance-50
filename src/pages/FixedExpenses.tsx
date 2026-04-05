@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Trash2, Pencil, Repeat } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -128,7 +128,7 @@ export default function FixedExpenses() {
             <Button onClick={openCreate} className="gap-2"><Plus className="h-4 w-4" /> Novo Gasto Fixo</Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>{editing ? 'Editar Gasto Fixo' : 'Novo Gasto Fixo'}</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{editing ? 'Editar Gasto Fixo' : 'Novo Gasto Fixo'}</DialogTitle><DialogDescription>{editing ? 'Atualize a recorrência e os dados do gasto fixo.' : 'Crie um gasto recorrente mensal e gere suas transações.'}</DialogDescription></DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label>Descrição</Label>
