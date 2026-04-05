@@ -1,10 +1,15 @@
 require('dotenv').config();
 const { pool } = require('./connection');
 
-const defaults = [
-  ['Salário', 'income'], ['Freelance', 'income'],
-  ['Alimentação', 'expense'], ['Transporte', 'expense'], ['Moradia', 'expense'],
-  ['Lazer', 'expense'], ['Saúde', 'expense'],
+const DEFAULT_CATEGORIES = [
+  ['Salário', 'income', '#10B981'],
+  ['Alimentação', 'expense', '#EF4444'],
+  ['Moradia', 'expense', '#3B82F6'],
+  ['Água', 'expense', '#06B6D4'],
+  ['Luz', 'expense', '#F59E0B'],
+  ['Transporte', 'expense', '#8B5CF6'],
+  ['Lazer', 'expense', '#EC4899'],
+  ['Investimento', 'expense', '#14B8A6'],
 ];
 
 async function ensureDatabaseInitialized() {
@@ -27,8 +32,8 @@ async function ensureDatabaseInitialized() {
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         name VARCHAR(50) NOT NULL,
         type VARCHAR(10) NOT NULL CHECK (type IN ('income', 'expense')),
-        user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-        is_default BOOLEAN DEFAULT FALSE,
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        color VARCHAR(7),
         created_at TIMESTAMP DEFAULT NOW(),
         UNIQUE(name, type, user_id)
       );
@@ -56,7 +61,6 @@ async function ensureDatabaseInitialized() {
       );
 
       ALTER TABLE transactions ADD COLUMN IF NOT EXISTS fixed_expense_id UUID REFERENCES fixed_expenses(id) ON DELETE SET NULL;
-      ALTER TABLE categories ADD COLUMN IF NOT EXISTS color VARCHAR(7);
 
       CREATE INDEX IF NOT EXISTS idx_transactions_user_date ON transactions(user_id, date);
       CREATE INDEX IF NOT EXISTS idx_categories_user ON categories(user_id);
@@ -64,12 +68,12 @@ async function ensureDatabaseInitialized() {
       CREATE INDEX IF NOT EXISTS idx_transactions_fixed_expense ON transactions(fixed_expense_id);
     `);
 
-    for (const [name, type] of defaults) {
-      await client.query(
-        `INSERT INTO categories (name, type, user_id, is_default) VALUES ($1, $2, NULL, TRUE) ON CONFLICT DO NOTHING`,
-        [name, type]
-      );
-    }
+    // Drop is_default column if it exists (migration from old schema)
+    await client.query(`ALTER TABLE categories DROP COLUMN IF EXISTS is_default`);
+
+    // Make user_id NOT NULL if it was nullable before (migration)
+    // We first delete orphaned global categories (user_id IS NULL)
+    await client.query(`DELETE FROM categories WHERE user_id IS NULL`);
 
     await client.query('COMMIT');
     console.log('Database schema is ready');
@@ -77,6 +81,20 @@ async function ensureDatabaseInitialized() {
     await client.query('ROLLBACK');
     console.error('Error initializing database:', err);
     throw err;
+  } finally {
+    client.release();
+  }
+}
+
+async function createDefaultCategoriesForUser(userId) {
+  const client = await pool.connect();
+  try {
+    for (const [name, type, color] of DEFAULT_CATEGORIES) {
+      await client.query(
+        `INSERT INTO categories (name, type, user_id, color) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING`,
+        [name, type, userId, color]
+      );
+    }
   } finally {
     client.release();
   }
@@ -98,4 +116,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { ensureDatabaseInitialized };
+module.exports = { ensureDatabaseInitialized, createDefaultCategoriesForUser, DEFAULT_CATEGORIES };

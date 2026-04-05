@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,13 +9,107 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Plus, Trash2, TrendingUp, TrendingDown, Pencil } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-const PRESET_COLORS = [
-  '#10B981', '#3B82F6', '#8B5CF6', '#F59E0B', '#EF4444',
-  '#EC4899', '#14B8A6', '#F97316', '#6366F1', '#84CC16',
-  '#06B6D4', '#A855F7',
-];
+interface Category {
+  id: string;
+  name: string;
+  type: string;
+  color?: string;
+}
 
-interface Category { id: string; name: string; type: string; color?: string; is_default?: boolean; }
+const GradientColorPicker = ({ value, onChange }: { value: string; onChange: (c: string) => void }) => {
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleGradientClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = e.currentTarget;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const pixel = ctx.getImageData(x * (canvas.width / rect.width), y * (canvas.height / rect.height), 1, 1).data;
+    const hex = `#${pixel[0].toString(16).padStart(2, '0')}${pixel[1].toString(16).padStart(2, '0')}${pixel[2].toString(16).padStart(2, '0')}`;
+    onChange(hex.toUpperCase());
+  }, [onChange]);
+
+  const handleMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (isDragging) handleGradientClick(e);
+  }, [isDragging, handleGradientClick]);
+
+  const drawGradient = useCallback((canvas: HTMLCanvasElement | null) => {
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const w = canvas.width;
+    const h = canvas.height;
+
+    // Horizontal hue gradient
+    const hueGrad = ctx.createLinearGradient(0, 0, w, 0);
+    hueGrad.addColorStop(0, '#FF0000');
+    hueGrad.addColorStop(0.17, '#FF00FF');
+    hueGrad.addColorStop(0.33, '#0000FF');
+    hueGrad.addColorStop(0.5, '#00FFFF');
+    hueGrad.addColorStop(0.67, '#00FF00');
+    hueGrad.addColorStop(0.83, '#FFFF00');
+    hueGrad.addColorStop(1, '#FF0000');
+    ctx.fillStyle = hueGrad;
+    ctx.fillRect(0, 0, w, h);
+
+    // Vertical white-to-transparent gradient
+    const whiteGrad = ctx.createLinearGradient(0, 0, 0, h / 2);
+    whiteGrad.addColorStop(0, 'rgba(255,255,255,1)');
+    whiteGrad.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = whiteGrad;
+    ctx.fillRect(0, 0, w, h / 2);
+
+    // Vertical transparent-to-black gradient
+    const blackGrad = ctx.createLinearGradient(0, h / 2, 0, h);
+    blackGrad.addColorStop(0, 'rgba(0,0,0,0)');
+    blackGrad.addColorStop(1, 'rgba(0,0,0,1)');
+    ctx.fillStyle = blackGrad;
+    ctx.fillRect(0, h / 2, w, h / 2);
+  }, []);
+
+  return (
+    <div className="space-y-3">
+      <Label>Cor</Label>
+      <div className="relative rounded-lg overflow-hidden border border-border cursor-crosshair">
+        <canvas
+          ref={drawGradient}
+          width={300}
+          height={150}
+          className="w-full h-[120px]"
+          onClick={handleGradientClick}
+          onMouseDown={() => setIsDragging(true)}
+          onMouseUp={() => setIsDragging(false)}
+          onMouseLeave={() => setIsDragging(false)}
+          onMouseMove={handleMove}
+        />
+      </div>
+      <div className="flex items-center gap-3">
+        <div
+          className="w-10 h-10 rounded-lg border border-border flex-shrink-0 shadow-inner"
+          style={{ backgroundColor: value }}
+        />
+        <Input
+          value={value}
+          onChange={(e) => {
+            const v = e.target.value;
+            if (/^#[0-9A-Fa-f]{0,6}$/.test(v)) onChange(v);
+          }}
+          maxLength={7}
+          className="w-28 font-mono text-sm"
+          placeholder="#000000"
+        />
+        <input
+          type="color"
+          value={value}
+          onChange={(e) => onChange(e.target.value.toUpperCase())}
+          className="w-8 h-8 rounded cursor-pointer border-0 p-0 bg-transparent"
+        />
+      </div>
+    </div>
+  );
+};
 
 export default function Categories() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -24,7 +118,7 @@ export default function Categories() {
   const [editDialog, setEditDialog] = useState<Category | null>(null);
   const [name, setName] = useState('');
   const [type, setType] = useState<'income' | 'expense'>('expense');
-  const [color, setColor] = useState(PRESET_COLORS[0]);
+  const [color, setColor] = useState('#10B981');
   const [editName, setEditName] = useState('');
   const [editColor, setEditColor] = useState('');
   const { toast } = useToast();
@@ -46,7 +140,7 @@ export default function Categories() {
       await api.createCategory({ name: name.trim(), type, color });
       toast({ title: 'Categoria criada!' });
       setName('');
-      setColor(PRESET_COLORS[0]);
+      setColor('#10B981');
       setDialogOpen(false);
       load();
     } catch (err: any) {
@@ -80,30 +174,9 @@ export default function Categories() {
 
   const openEdit = (c: Category) => {
     setEditName(c.name);
-    setEditColor(c.color || PRESET_COLORS[0]);
+    setEditColor(c.color || '#10B981');
     setEditDialog(c);
   };
-
-  const ColorPicker = ({ value, onChange }: { value: string; onChange: (c: string) => void }) => (
-    <div className="space-y-2">
-      <Label>Cor</Label>
-      <div className="flex flex-wrap gap-2">
-        {PRESET_COLORS.map((c) => (
-          <button
-            key={c}
-            type="button"
-            onClick={() => onChange(c)}
-            className={`w-8 h-8 rounded-full border-2 transition-all ${value === c ? 'border-foreground scale-110' : 'border-transparent'}`}
-            style={{ backgroundColor: c }}
-          />
-        ))}
-      </div>
-      <div className="flex items-center gap-2 mt-2">
-        <input type="color" value={value} onChange={(e) => onChange(e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
-        <Input value={value} onChange={(e) => onChange(e.target.value)} maxLength={7} className="w-24 font-mono text-xs" placeholder="#000000" />
-      </div>
-    </div>
-  );
 
   const incomeCategories = categories.filter(c => c.type === 'income');
   const expenseCategories = categories.filter(c => c.type === 'expense');
@@ -111,20 +184,16 @@ export default function Categories() {
   const CategoryItem = ({ c }: { c: Category }) => (
     <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-accent/50">
       <div className="flex items-center gap-2">
-        <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: c.color || '#9CA3AF' }} />
+        <div className="w-4 h-4 rounded-full flex-shrink-0 border border-border" style={{ backgroundColor: c.color || '#9CA3AF' }} />
         <span className="text-sm font-medium text-foreground">{c.name}</span>
       </div>
       <div className="flex gap-1">
-        {!c.is_default && (
-          <>
-            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => openEdit(c)}>
-              <Pencil className="h-3.5 w-3.5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(c.id)}>
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
-          </>
-        )}
+        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => openEdit(c)}>
+          <Pencil className="h-3.5 w-3.5" />
+        </Button>
+        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(c.id)}>
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
       </div>
     </div>
   );
@@ -138,7 +207,7 @@ export default function Categories() {
             <Button className="gap-2"><Plus className="h-4 w-4" /> Nova</Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>Nova categoria</DialogTitle><DialogDescription>Crie uma categoria personalizada com cor.</DialogDescription></DialogHeader>
+            <DialogHeader><DialogTitle>Nova categoria</DialogTitle><DialogDescription>Crie uma categoria com cor personalizada.</DialogDescription></DialogHeader>
             <form onSubmit={handleCreate} className="space-y-4">
               <div className="space-y-2">
                 <Label>Nome</Label>
@@ -154,7 +223,7 @@ export default function Categories() {
                   </SelectContent>
                 </Select>
               </div>
-              <ColorPicker value={color} onChange={setColor} />
+              <GradientColorPicker value={color} onChange={setColor} />
               <Button type="submit" className="w-full">Criar</Button>
             </form>
           </DialogContent>
@@ -164,13 +233,13 @@ export default function Categories() {
       {/* Edit Dialog */}
       <Dialog open={!!editDialog} onOpenChange={(open) => !open && setEditDialog(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Editar categoria</DialogTitle><DialogDescription>Altere o nome ou a cor da categoria.</DialogDescription></DialogHeader>
+          <DialogHeader><DialogTitle>Editar categoria</DialogTitle><DialogDescription>Altere o nome ou a cor.</DialogDescription></DialogHeader>
           <form onSubmit={handleEdit} className="space-y-4">
             <div className="space-y-2">
               <Label>Nome</Label>
               <Input maxLength={50} value={editName} onChange={(e) => setEditName(e.target.value)} />
             </div>
-            <ColorPicker value={editColor} onChange={setEditColor} />
+            <GradientColorPicker value={editColor} onChange={setEditColor} />
             <Button type="submit" className="w-full">Salvar</Button>
           </form>
         </DialogContent>
