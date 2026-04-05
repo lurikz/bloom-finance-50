@@ -163,10 +163,13 @@ router.put('/users/:id', [
   body('name').optional().trim().notEmpty().isLength({ max: 100 }),
   body('email').optional().trim().isEmail().normalizeEmail(),
   body('password').optional().isLength({ min: 6 }),
+  body('client_type').optional().isIn(['recurring', 'lifetime']),
+  body('plan_amount').optional().isFloat({ min: 0.01 }),
+  body('due_day').optional().isInt({ min: 1, max: 31 }),
 ], validate, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, password } = req.body;
+    const { name, email, password, client_type, plan_amount, due_day } = req.body;
     const sets = [];
     const params = [];
     let idx = 1;
@@ -178,10 +181,13 @@ router.put('/users/:id', [
       sets.push(`password_hash = $${idx++}`);
       params.push(hash);
     }
+    if (client_type) { sets.push(`client_type = $${idx++}`); params.push(client_type); }
+    if (plan_amount !== undefined) { sets.push(`plan_amount = $${idx++}`); params.push(plan_amount); }
+    if (due_day !== undefined) { sets.push(`due_day = $${idx++}`); params.push(due_day); }
     if (sets.length === 0) return res.status(400).json({ message: 'Nenhum dado para atualizar' });
     params.push(id);
     const result = await pool.query(
-      `UPDATE users SET ${sets.join(', ')} WHERE id = $${idx} RETURNING id, name, email, is_blocked, created_at`,
+      `UPDATE users SET ${sets.join(', ')} WHERE id = $${idx} RETURNING id, name, email, is_blocked, created_at, client_type, plan_amount, due_day`,
       params
     );
     if (result.rows.length === 0) return res.status(404).json({ message: 'Usuário não encontrado' });
