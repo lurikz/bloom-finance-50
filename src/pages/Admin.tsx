@@ -102,6 +102,14 @@ export default function Admin() {
   const [dash, setDash] = useState<AdminDashData | null>(null);
   const [dashLoading, setDashLoading] = useState(false);
 
+  // Notifications state
+  interface SentNotification { id: string; title: string; message: string; type: string; target: string; target_user_id: string | null; target_user_name: string | null; target_user_email: string | null; sent_by: string; created_at: string; read_count: number; total_recipients: number; }
+  const [notifHistory, setNotifHistory] = useState<SentNotification[]>([]);
+  const [notifLoading, setNotifLoading] = useState(false);
+  const [notifSending, setNotifSending] = useState(false);
+  const [notifForm, setNotifForm] = useState({ title: '', message: '', type: 'system', target: 'all', target_user_id: '' });
+  const [userSearch, setUserSearch] = useState('');
+
   const loadDbStatus = async () => {
     setDbLoading(true); setDbError(null);
     try { setDbStatus(await api.getDbStatus()); } catch (e: any) { setDbError(e.message); } finally { setDbLoading(false); }
@@ -124,8 +132,12 @@ export default function Admin() {
     setDashLoading(true);
     try { setDash(await api.getAdminDashboard()); } catch { } finally { setDashLoading(false); }
   };
+  const loadNotifHistory = async () => {
+    setNotifLoading(true);
+    try { setNotifHistory(await api.getNotificationHistory()); } catch { } finally { setNotifLoading(false); }
+  };
 
-  useEffect(() => { if (isAdmin) { loadDbStatus(); loadUsers(); loadSubs(); loadDash(); } }, [isAdmin]);
+  useEffect(() => { if (isAdmin) { loadDbStatus(); loadUsers(); loadSubs(); loadDash(); loadNotifHistory(); } }, [isAdmin]);
   useEffect(() => { if (isAdmin) loadUsers(); }, [userFilter, isAdmin]);
   useEffect(() => { if (isAdmin) loadSubs(); }, [subFilter, subMonth, subYear, isAdmin]);
 
