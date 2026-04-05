@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
-import { Bell, Check, CheckCheck, Trash2, ArrowDownCircle, ArrowUpCircle, Clock, AlertTriangle, Info, X } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { Bell, CheckCheck, Trash2, ArrowDownCircle, ArrowUpCircle, Clock, AlertTriangle, Info, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNotifications, NotificationType } from '@/contexts/NotificationContext';
 import { format, isToday, isYesterday } from 'date-fns';
@@ -38,21 +38,48 @@ function groupByDate(notifications: { createdAt: string }[]) {
 export function NotificationBell() {
   const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification } = useNotifications();
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; right: number } | null>(null);
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+
+  const calcPos = useCallback(() => {
+    if (!btnRef.current) return;
+    const rect = btnRef.current.getBoundingClientRect();
+    const panelWidth = isMobile ? window.innerWidth : 384; // sm:w-96
+    let left = rect.left;
+    // If panel would overflow right edge, align to right edge
+    if (left + panelWidth > window.innerWidth - 8) {
+      left = window.innerWidth - panelWidth - 8;
+    }
+    // If panel would overflow left edge
+    if (left < 8) left = 8;
+    setPos({ top: rect.bottom + 8, left, right: window.innerWidth - rect.right });
+  }, [isMobile]);
 
   useEffect(() => {
-    function handler(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    if (open) document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
+    if (!open) return;
+    calcPos();
+    const handler = (e: MouseEvent) => {
+      if (
+        panelRef.current && !panelRef.current.contains(e.target as Node) &&
+        btnRef.current && !btnRef.current.contains(e.target as Node)
+      ) setOpen(false);
+    };
+    const resizeHandler = () => calcPos();
+    document.addEventListener('mousedown', handler);
+    window.addEventListener('resize', resizeHandler);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      window.removeEventListener('resize', resizeHandler);
+    };
+  }, [open, calcPos]);
 
   const groups = groupByDate(notifications);
 
   return (
-    <div className="relative" ref={ref}>
-      <Button variant="ghost" size="icon" className="relative" onClick={() => setOpen(!open)} aria-label="Notificações">
+    <>
+      <Button ref={btnRef} variant="ghost" size="icon" className="relative" onClick={() => setOpen(!open)} aria-label="Notificações">
         <Bell className="h-5 w-5" />
         {unreadCount > 0 && (
           <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground animate-pulse">
@@ -61,8 +88,31 @@ export function NotificationBell() {
         )}
       </Button>
 
-      {open && (
-        <div className="absolute right-0 top-12 z-50 w-80 sm:w-96 max-h-[70vh] flex flex-col rounded-xl border border-border bg-card shadow-xl animate-in fade-in slide-in-from-top-2 duration-200">
+      {/* Backdrop mobile */}
+      {open && isMobile && (
+        <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setOpen(false)} />
+      )}
+
+      {open && pos && (
+        <div
+          ref={panelRef}
+          style={isMobile
+            ? { position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50 }
+            : { position: 'fixed', top: pos.top, left: pos.left, zIndex: 50 }
+          }
+          className={`flex flex-col border border-border bg-card shadow-xl transition-all duration-200 animate-in fade-in ${
+            isMobile
+              ? 'w-full max-h-[80vh] rounded-t-2xl slide-in-from-bottom-4'
+              : 'w-96 max-h-[70vh] rounded-xl slide-in-from-top-2'
+          }`}
+        >
+          {/* Drag handle mobile */}
+          {isMobile && (
+            <div className="flex justify-center py-2">
+              <div className="h-1 w-10 rounded-full bg-muted-foreground/30" />
+            </div>
+          )}
+
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
             <h3 className="text-sm font-semibold text-foreground">Notificações</h3>
@@ -128,6 +178,6 @@ export function NotificationBell() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
