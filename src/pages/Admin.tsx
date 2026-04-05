@@ -125,7 +125,7 @@ export default function Admin() {
 
   useEffect(() => { if (isAdmin) { loadDbStatus(); loadUsers(); loadSubs(); loadDash(); } }, [isAdmin]);
   useEffect(() => { if (isAdmin) loadUsers(); }, [userFilter, isAdmin]);
-  useEffect(() => { if (isAdmin) loadSubs(); }, [subFilter, isAdmin]);
+  useEffect(() => { if (isAdmin) loadSubs(); }, [subFilter, subMonth, subYear, isAdmin]);
 
   if (!isAdmin) return <Navigate to="/" replace />;
 
