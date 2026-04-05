@@ -89,4 +89,8 @@ export const api = {
     if (params?.year) query.set('year', String(params.year));
     return request(`/reports/monthly?${query.toString()}`);
   },
+
+  // Admin
+  getDbStatus: () => request('/admin/db-status'),
+  initDb: () => request('/admin/init-db', { method: 'POST' }),
 };
