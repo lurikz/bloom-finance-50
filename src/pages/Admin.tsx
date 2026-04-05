@@ -110,7 +110,13 @@ export default function Admin() {
   };
   const loadSubs = async () => {
     setSubsLoading(true);
-    try { setSubs(await api.getSubscriptions(subFilter === 'all' ? undefined : { status: subFilter })); } catch { } finally { setSubsLoading(false); }
+    try {
+      const params: any = {};
+      if (subFilter !== 'all') params.status = subFilter;
+      if (subMonth) params.month = parseInt(subMonth);
+      if (subYear) params.year = parseInt(subYear);
+      setSubs(await api.getSubscriptions(Object.keys(params).length ? params : undefined));
+    } catch { } finally { setSubsLoading(false); }
   };
   const loadDash = async () => {
     setDashLoading(true);
