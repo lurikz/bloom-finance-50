@@ -154,7 +154,7 @@ export default function Categories() {
               <Label>Nome</Label>
               <Input maxLength={50} value={editName} onChange={(e) => setEditName(e.target.value)} />
             </div>
-            <GradientColorPicker value={editColor} onChange={setEditColor} />
+             <GradientColorPicker value={editColor} onChange={setEditColor} />
             <Button type="submit" className="w-full">Salvar</Button>
           </form>
         </DialogContent>
