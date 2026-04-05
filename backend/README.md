@@ -13,6 +13,7 @@ DATABASE_URL=postgresql://usuario:senha@host:5432/fincontrol
 JWT_SECRET=sua-chave-secreta-muito-longa-e-aleatoria-min-32-chars
 PORT=3001
 FRONTEND_URL=https://seu-frontend.com
+ADMIN_EMAIL=padilha.ctt@gmail.com
 ```
 
 ### 3. Deploy
@@ -23,15 +24,29 @@ FRONTEND_URL=https://seu-frontend.com
 5. Expor a porta 3001
 
 ### 4. Inicializar o banco
-O backend agora executa a inicialização automaticamente no `prestart`, incluindo criação da tabela `fixed_expenses` e da coluna `transactions.fixed_expense_id` quando ainda não existirem.
-
-Se o serviço já existia antes dessas mudanças, faça um **rebuild/redeploy completo** para aplicar a atualização do schema.
+O backend executa a inicialização automaticamente no `prestart`.
 
 ### 5. Frontend
 No frontend, configure a variável:
 ```
 VITE_API_URL=https://seu-backend.com/api
 ```
+
+## Rotas Admin (restritas a ADMIN_EMAIL)
+- `GET /api/admin/db-status` — status do banco
+- `POST /api/admin/init-db` — criar/atualizar schema
+- `POST /api/admin/sync-categories` — sincronizar categorias padrão
+- `GET /api/admin/users?status=` — listar usuários (all/active/blocked/overdue/due_soon)
+- `POST /api/admin/users` — criar usuário
+- `PUT /api/admin/users/:id` — editar usuário
+- `DELETE /api/admin/users/:id` — excluir usuário
+- `POST /api/admin/users/:id/block` — bloquear
+- `POST /api/admin/users/:id/unblock` — desbloquear
+- `GET /api/admin/subscriptions?user_id=&status=` — listar mensalidades
+- `POST /api/admin/subscriptions` — criar mensalidade
+- `POST /api/admin/subscriptions/:id/pay` — registrar pagamento
+- `DELETE /api/admin/subscriptions/:id` — excluir mensalidade
+- `GET /api/admin/dashboard` — indicadores administrativos
 
 ## Segurança implementada
 - ✅ Senhas com bcrypt (12 rounds)
@@ -42,3 +57,6 @@ VITE_API_URL=https://seu-backend.com/api
 - ✅ Validação de input com express-validator
 - ✅ Queries parametrizadas (anti SQL injection)
 - ✅ Filtragem por user_id em todas as queries
+- ✅ Admin restrito por email no middleware (requireAdmin)
+- ✅ Bloqueio de usuários impede login
+- ✅ Atualização automática de mensalidades vencidas
