@@ -71,6 +71,7 @@ router.get('/users', async (req, res) => {
     const { status } = req.query;
     let query = `
       SELECT u.id, u.name, u.email, u.is_blocked, u.created_at,
+        u.client_type, u.plan_amount, u.due_day,
         s.id as sub_id, s.amount as sub_amount, s.due_date as sub_due_date, 
         s.status as sub_status, s.paid_at as sub_paid_at
       FROM users u
