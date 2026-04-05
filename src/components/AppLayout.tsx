@@ -10,6 +10,7 @@ const links = [
   { to: '/categories', icon: Tags, label: 'Categorias' },
   { to: '/fixed-expenses', icon: Repeat, label: 'Gastos Fixos' },
   { to: '/reports', icon: FileText, label: 'Relatórios' },
+  { to: '/admin', icon: Settings, label: 'Admin' },
 ];
 
 export function AppLayout() {
