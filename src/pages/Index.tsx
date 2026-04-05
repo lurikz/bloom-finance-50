@@ -23,6 +23,7 @@ export default function Dashboard() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [savingsSummary, setSavingsSummary] = useState<{ totalSaved: number; count: number } | null>(null);
+  const [savingsList, setSavingsList] = useState<any[]>([]);
 
   useEffect(() => {
     setLoading(true);
