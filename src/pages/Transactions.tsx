@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Trash2, Pencil, TrendingUp, TrendingDown, Search, Filter, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Trash2, Pencil, TrendingUp, TrendingDown, Search, Filter, X, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNotifications } from '@/contexts/NotificationContext';
 
@@ -44,6 +44,10 @@ export default function Transactions() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [useCustomPeriod, setUseCustomPeriod] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const ITEMS_PER_PAGE = 20;
 
   const [form, setForm] = useState({ description: '', amount: '', type: 'expense' as 'income' | 'expense', category_id: '', date: new Date().toISOString().split('T')[0] });
   const [isRecurring, setIsRecurring] = useState(false);
@@ -53,9 +57,9 @@ export default function Transactions() {
 
   const hasActiveFilters = searchTerm || filterType !== 'all' || filterCategory !== 'all' || minAmount || maxAmount || dateFrom || dateTo;
 
-  const load = () => {
+  const load = (page = currentPage) => {
     setLoading(true);
-    const params: any = {};
+    const params: any = { page, limit: ITEMS_PER_PAGE };
     if (!useCustomPeriod) { params.month = month; params.year = year; }
     if (searchTerm.trim()) params.search = searchTerm.trim();
     if (filterType !== 'all') params.type = filterType;
@@ -66,7 +70,14 @@ export default function Transactions() {
     if (dateTo) params.date_to = dateTo;
 
     Promise.all([api.getTransactions(params), api.getCategories(), api.getSavings().catch(() => [])])
-      .then(([t, c, s]) => { setTransactions(t); setCategories(c); setSavings(s); })
+      .then(([res, c, s]) => {
+        setTransactions(res.data);
+        setTotalPages(res.pagination.totalPages);
+        setTotalItems(res.pagination.total);
+        setCurrentPage(res.pagination.page);
+        setCategories(c);
+        setSavings(s);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   };
@@ -80,9 +91,10 @@ export default function Transactions() {
     setDateFrom('');
     setDateTo('');
     setUseCustomPeriod(false);
+    setCurrentPage(1);
   };
 
-  useEffect(() => { load(); }, [month, year, useCustomPeriod]);
+  useEffect(() => { load(1); }, [month, year, useCustomPeriod]);
 
   const filteredCats = categories.filter(c => c.type === form.type);
 
@@ -345,16 +357,16 @@ export default function Transactions() {
 
             {/* Actions */}
             <div className="flex gap-2 flex-wrap">
-              <Button size="sm" onClick={load} className="gap-1.5">
+              <Button size="sm" onClick={() => load(1)} className="gap-1.5">
                 <Search className="h-3.5 w-3.5" /> Buscar
               </Button>
               {hasActiveFilters && (
-                <Button size="sm" variant="ghost" onClick={() => { clearFilters(); setTimeout(load, 0); }} className="gap-1.5">
+                <Button size="sm" variant="ghost" onClick={() => { clearFilters(); setTimeout(() => load(1), 0); }} className="gap-1.5">
                   <X className="h-3.5 w-3.5" /> Limpar filtros
                 </Button>
               )}
               <span className="text-xs text-muted-foreground self-center ml-auto">
-                {transactions.length} resultado{transactions.length !== 1 ? 's' : ''}
+                {totalItems} resultado{totalItems !== 1 ? 's' : ''}
               </span>
             </div>
           </CardContent>
@@ -442,6 +454,58 @@ export default function Transactions() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <p className="text-sm text-muted-foreground">
+            Página {currentPage} de {totalPages} · {totalItems} transações
+          </p>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage <= 1}
+              onClick={() => load(currentPage - 1)}
+              className="gap-1"
+            >
+              <ChevronLeft className="h-4 w-4" /> Anterior
+            </Button>
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              let page: number;
+              if (totalPages <= 5) {
+                page = i + 1;
+              } else if (currentPage <= 3) {
+                page = i + 1;
+              } else if (currentPage >= totalPages - 2) {
+                page = totalPages - 4 + i;
+              } else {
+                page = currentPage - 2 + i;
+              }
+              return (
+                <Button
+                  key={page}
+                  variant={page === currentPage ? 'default' : 'outline'}
+                  size="sm"
+                  className="w-9 h-9 p-0"
+                  onClick={() => load(page)}
+                >
+                  {page}
+                </Button>
+              );
+            })}
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage >= totalPages}
+              onClick={() => load(currentPage + 1)}
+              className="gap-1"
+            >
+              Próxima <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
