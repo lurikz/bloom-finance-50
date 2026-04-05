@@ -3,11 +3,14 @@ const { pool } = require('./connection');
 
 const DEFAULT_CATEGORIES = [
   ['Salário', 'income', '#10B981'],
+  ['Freelance', 'income', '#3B82F6'],
+  ['Saúde', 'expense', '#EF4444'],
   ['Transporte', 'expense', '#8B5CF6'],
-  ['Moradia', 'expense', '#3B82F6'],
+  ['Aluguel', 'expense', '#F97316'],
   ['Água', 'expense', '#06B6D4'],
   ['Luz', 'expense', '#F59E0B'],
-  ['Lazer', 'expense', '#EC4899'],
+  ['Internet', 'expense', '#6366F1'],
+  ['Cartão de crédito', 'expense', '#EC4899'],
 ];
 
 async function ensureDatabaseInitialized() {
@@ -68,9 +71,6 @@ async function ensureDatabaseInitialized() {
 
     // Drop is_default column if it exists (migration from old schema)
     await client.query(`ALTER TABLE categories DROP COLUMN IF EXISTS is_default`);
-
-    // Make user_id NOT NULL if it was nullable before (migration)
-    // We first delete orphaned global categories (user_id IS NULL)
     await client.query(`DELETE FROM categories WHERE user_id IS NULL`);
 
     await client.query('COMMIT');
@@ -98,6 +98,26 @@ async function createDefaultCategoriesForUser(userId) {
   }
 }
 
+async function syncDefaultCategoriesForAllUsers() {
+  const client = await pool.connect();
+  try {
+    const users = await client.query('SELECT id FROM users');
+    let synced = 0;
+    for (const user of users.rows) {
+      for (const [name, type, color] of DEFAULT_CATEGORIES) {
+        await client.query(
+          `INSERT INTO categories (name, type, user_id, color) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING`,
+          [name, type, user.id, color]
+        );
+      }
+      synced++;
+    }
+    return { synced, total: users.rows.length };
+  } finally {
+    client.release();
+  }
+}
+
 async function init() {
   try {
     await ensureDatabaseInitialized();
@@ -114,4 +134,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { ensureDatabaseInitialized, createDefaultCategoriesForUser, DEFAULT_CATEGORIES };
+module.exports = { ensureDatabaseInitialized, createDefaultCategoriesForUser, syncDefaultCategoriesForAllUsers, DEFAULT_CATEGORIES };

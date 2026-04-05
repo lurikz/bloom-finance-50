@@ -1,6 +1,6 @@
 const express = require('express');
 const { authenticate } = require('../middleware/auth');
-const { ensureDatabaseInitialized } = require('../db/init');
+const { ensureDatabaseInitialized, syncDefaultCategoriesForAllUsers } = require('../db/init');
 const { pool } = require('../db/connection');
 
 const router = express.Router();
@@ -14,6 +14,17 @@ router.post('/init-db', async (req, res) => {
   } catch (err) {
     console.error('Admin init-db error:', err);
     res.status(500).json({ success: false, message: 'Erro ao inicializar banco de dados' });
+  }
+});
+
+// Sync default categories for all existing users
+router.post('/sync-categories', async (req, res) => {
+  try {
+    const result = await syncDefaultCategoriesForAllUsers();
+    res.json({ success: true, message: `Categorias sincronizadas para ${result.synced} de ${result.total} usuários` });
+  } catch (err) {
+    console.error('Admin sync-categories error:', err);
+    res.status(500).json({ success: false, message: 'Erro ao sincronizar categorias' });
   }
 });
 
@@ -33,7 +44,6 @@ router.get('/db-status', async (req, res) => {
       counts[row.table_name] = parseInt(countResult.rows[0].count);
     }
 
-    // Check if fixed_expense_id column exists in transactions
     const colCheck = await pool.query(`
       SELECT column_name 
       FROM information_schema.columns 
