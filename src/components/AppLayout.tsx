@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { LayoutDashboard, ArrowLeftRight, Tags, FileText, LogOut, Menu, X, Wallet, Repeat, Settings, UserCog, PiggyBank } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 export function AppLayout() {
   const { user, logout, isAdmin } = useAuth();
