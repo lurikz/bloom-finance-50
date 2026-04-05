@@ -18,6 +18,7 @@ const categoryRoutes = require('./routes/categories');
 const dashboardRoutes = require('./routes/dashboard');
 const reportRoutes = require('./routes/reports');
 const fixedExpenseRoutes = require('./routes/fixedExpenses');
+const adminRoutes = require('./routes/admin');
 const { ensureDatabaseInitialized } = require('./db/init');
 
 const app = express();
@@ -65,6 +66,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/fixed-expenses', fixedExpenseRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Health check (includes DB connectivity test)
 app.get('/api/health', async (req, res) => {
