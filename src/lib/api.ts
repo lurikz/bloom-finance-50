@@ -123,8 +123,12 @@ export const api = {
     request('/admin/subscriptions', { method: 'POST', body: JSON.stringify(data) }),
   paySubscription: (id: string) =>
     request(`/admin/subscriptions/${id}/pay`, { method: 'POST' }),
+  updateSubscriptionStatus: (id: string, status: string) =>
+    request(`/admin/subscriptions/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) }),
   deleteSubscription: (id: string) =>
     request(`/admin/subscriptions/${id}`, { method: 'DELETE' }),
+  generateSubscriptions: () =>
+    request('/admin/subscriptions/generate', { method: 'POST' }),
 
   // Admin Dashboard
   getAdminDashboard: () => request('/admin/dashboard'),
