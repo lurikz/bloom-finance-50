@@ -346,16 +346,33 @@ export default function Admin() {
         {/* ========== COBRANÇAS ========== */}
         <TabsContent value="billing" className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <Select value={subFilter} onValueChange={(v) => { setSubFilter(v); if (v !== 'due_soon') loadSubs(); }}>
-              <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas</SelectItem>
-                <SelectItem value="due_soon">Próx. do vencimento (5 dias)</SelectItem>
-                <SelectItem value="overdue">Vencidas</SelectItem>
-                <SelectItem value="paid">Pagas</SelectItem>
-                <SelectItem value="pending">Pendentes</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex flex-wrap gap-2">
+              <Select value={subFilter} onValueChange={setSubFilter}>
+                <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os status</SelectItem>
+                  <SelectItem value="pending">Pendentes</SelectItem>
+                  <SelectItem value="paid">Pagos</SelectItem>
+                  <SelectItem value="overdue">Atrasados</SelectItem>
+                  <SelectItem value="lost">Perdidos (+30 dias)</SelectItem>
+                  <SelectItem value="due_soon">Próx. do vencimento</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={subMonth} onValueChange={setSubMonth}>
+                <SelectTrigger className="w-[140px]"><SelectValue placeholder="Mês" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos os meses</SelectItem>
+                  {MONTH_NAMES.map((m, i) => <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={subYear} onValueChange={setSubYear}>
+                <SelectTrigger className="w-[110px]"><SelectValue placeholder="Ano" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos</SelectItem>
+                  {[2024, 2025, 2026, 2027].map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="flex gap-2">
               <Button variant="outline" className="gap-2" onClick={handleGenerateSubs} disabled={generating}>
                 {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} Gerar Cobranças
