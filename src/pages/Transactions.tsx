@@ -22,6 +22,7 @@ interface Category { id: string; name: string; type: string; }
 interface Saving { id: string; name: string; current_amount: number; target_amount: number | null; }
 
 export default function Transactions() {
+  const { addNotification } = useNotifications();
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [year, setYear] = useState(now.getFullYear());
