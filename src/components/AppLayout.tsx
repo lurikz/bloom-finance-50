@@ -47,11 +47,14 @@ export function AppLayout() {
             </NavLink>
           ))}
         </nav>
-        <div className="border-t border-border pt-4">
-          <p className="text-xs text-muted-foreground mb-2 truncate">{user?.email}</p>
-          <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-muted-foreground" onClick={logout}>
-            <LogOut className="h-4 w-4" /> Sair
-          </Button>
+        <div className="border-t border-border pt-4 flex items-center justify-between">
+          <div>
+            <p className="text-xs text-muted-foreground mb-2 truncate">{user?.email}</p>
+            <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-muted-foreground" onClick={logout}>
+              <LogOut className="h-4 w-4" /> Sair
+            </Button>
+          </div>
+          <ThemeToggle />
         </div>
       </aside>
 
