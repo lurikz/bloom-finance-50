@@ -6,7 +6,7 @@ import { TrendingUp, TrendingDown, Wallet, ArrowUpRight, ArrowDownRight } from '
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-const COLORS = ['hsl(160,84%,39%)','hsl(200,70%,50%)','hsl(280,60%,55%)','hsl(40,90%,55%)','hsl(330,70%,55%)','hsl(100,50%,45%)','hsl(20,80%,50%)','hsl(240,50%,60%)'];
+const DEFAULT_COLORS = ['hsl(160,84%,39%)','hsl(200,70%,50%)','hsl(280,60%,55%)','hsl(40,90%,55%)','hsl(330,70%,55%)','hsl(100,50%,45%)','hsl(20,80%,50%)','hsl(240,50%,60%)'];
 
 function formatCurrency(v: number) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
