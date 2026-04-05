@@ -8,6 +8,7 @@ const links = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/transactions', icon: ArrowLeftRight, label: 'Transações' },
   { to: '/categories', icon: Tags, label: 'Categorias' },
+  { to: '/reports', icon: FileText, label: 'Relatórios' },
 ];
 
 export function AppLayout() {
