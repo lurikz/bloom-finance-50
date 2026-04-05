@@ -357,16 +357,16 @@ export default function Transactions() {
 
             {/* Actions */}
             <div className="flex gap-2 flex-wrap">
-              <Button size="sm" onClick={load} className="gap-1.5">
+              <Button size="sm" onClick={() => load(1)} className="gap-1.5">
                 <Search className="h-3.5 w-3.5" /> Buscar
               </Button>
               {hasActiveFilters && (
-                <Button size="sm" variant="ghost" onClick={() => { clearFilters(); setTimeout(load, 0); }} className="gap-1.5">
+                <Button size="sm" variant="ghost" onClick={() => { clearFilters(); setTimeout(() => load(1), 0); }} className="gap-1.5">
                   <X className="h-3.5 w-3.5" /> Limpar filtros
                 </Button>
               )}
               <span className="text-xs text-muted-foreground self-center ml-auto">
-                {transactions.length} resultado{transactions.length !== 1 ? 's' : ''}
+                {totalItems} resultado{totalItems !== 1 ? 's' : ''}
               </span>
             </div>
           </CardContent>
