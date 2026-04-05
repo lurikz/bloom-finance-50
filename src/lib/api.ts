@@ -34,6 +34,8 @@ export const api = {
     request('/auth/register', { method: 'POST', body: JSON.stringify({ email, password, name }) }),
   login: (email: string, password: string) =>
     request('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
+  adminLogin: (username: string, password: string) =>
+    request('/auth/admin-login', { method: 'POST', body: JSON.stringify({ username, password }) }),
   forgotPassword: (email: string) =>
     request('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
   resetPassword: (token: string, password: string) =>
