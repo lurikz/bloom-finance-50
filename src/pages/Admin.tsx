@@ -16,7 +16,7 @@ import {
   Settings, Database, Users, CreditCard, BarChart3,
   Plus, Trash2, Pencil, Lock, Unlock, CheckCircle, XCircle,
   Loader2, RefreshCw, DollarSign, AlertTriangle, TrendingUp,
-  Receipt, Clock,
+  Receipt, Clock, FileDown,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
