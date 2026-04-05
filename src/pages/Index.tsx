@@ -18,11 +18,15 @@ export default function Dashboard() {
   const [year, setYear] = useState(now.getFullYear());
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [savingsSummary, setSavingsSummary] = useState<{ totalSaved: number; count: number } | null>(null);
 
   useEffect(() => {
     setLoading(true);
-    api.getDashboard({ month, year })
-      .then(setData)
+    Promise.all([
+      api.getDashboard({ month, year }),
+      api.getSavingsSummary().catch(() => null),
+    ])
+      .then(([d, s]) => { setData(d); setSavingsSummary(s); })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [month, year]);
