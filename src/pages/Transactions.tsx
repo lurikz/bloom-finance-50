@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Trash2, Pencil, TrendingUp, TrendingDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useNotifications } from '@/contexts/NotificationContext';
 
 const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
@@ -21,6 +22,7 @@ interface Category { id: string; name: string; type: string; }
 interface Saving { id: string; name: string; current_amount: number; target_amount: number | null; }
 
 export default function Transactions() {
+  const { addNotification } = useNotifications();
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [year, setYear] = useState(now.getFullYear());
@@ -99,10 +101,14 @@ export default function Transactions() {
         toast({ title: 'Gasto fixo e transações recorrentes criados!' });
       } else {
         await api.createTransaction({ ...form, amount, description: form.description.trim() });
-        // If adding to a saving, deposit the amount
         if (addToSaving && selectedSavingId && form.type === 'expense') {
           await api.depositSaving(selectedSavingId, { amount, description: `Depósito via transação: ${form.description.trim()}` });
         }
+        addNotification({
+          type: form.type === 'income' ? 'income' : 'expense',
+          title: form.type === 'income' ? 'Nova receita registrada' : 'Nova despesa registrada',
+          description: `${form.description.trim()} — ${formatCurrency(amount)}`,
+        });
         toast({ title: 'Transação criada!' });
       }
       setDialogOpen(false);

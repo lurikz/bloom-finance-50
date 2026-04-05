@@ -4,6 +4,7 @@ import { LayoutDashboard, ArrowLeftRight, Tags, FileText, LogOut, Menu, X, Walle
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { NotificationBell } from '@/components/NotificationBell';
 
 export function AppLayout() {
   const { user, logout, isAdmin } = useAuth();
@@ -24,9 +25,12 @@ export function AppLayout() {
     <div className="flex min-h-screen bg-background">
       {/* Sidebar desktop */}
       <aside className="hidden md:flex w-64 flex-col border-r border-border bg-card p-6">
-        <div className="flex items-center gap-2 mb-10">
-          <Wallet className="h-7 w-7 text-primary" />
-          <span className="text-xl font-bold text-foreground">FinControl</span>
+        <div className="flex items-center justify-between mb-10">
+          <div className="flex items-center gap-2">
+            <Wallet className="h-7 w-7 text-primary" />
+            <span className="text-xl font-bold text-foreground">FinControl</span>
+          </div>
+          <NotificationBell />
         </div>
         <nav className="flex flex-col gap-1 flex-1">
           {links.map((l) => (
@@ -66,6 +70,7 @@ export function AppLayout() {
             <span className="text-lg font-bold">FinControl</span>
           </div>
           <div className="flex items-center gap-1">
+            <NotificationBell />
             <ThemeToggle />
             <Button variant="ghost" size="icon" onClick={() => setMenuOpen(!menuOpen)}>
               {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
