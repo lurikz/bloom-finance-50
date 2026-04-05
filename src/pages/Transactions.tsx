@@ -57,9 +57,9 @@ export default function Transactions() {
 
   const hasActiveFilters = searchTerm || filterType !== 'all' || filterCategory !== 'all' || minAmount || maxAmount || dateFrom || dateTo;
 
-  const load = () => {
+  const load = (page = currentPage) => {
     setLoading(true);
-    const params: any = {};
+    const params: any = { page, limit: ITEMS_PER_PAGE };
     if (!useCustomPeriod) { params.month = month; params.year = year; }
     if (searchTerm.trim()) params.search = searchTerm.trim();
     if (filterType !== 'all') params.type = filterType;
@@ -70,7 +70,14 @@ export default function Transactions() {
     if (dateTo) params.date_to = dateTo;
 
     Promise.all([api.getTransactions(params), api.getCategories(), api.getSavings().catch(() => [])])
-      .then(([t, c, s]) => { setTransactions(t); setCategories(c); setSavings(s); })
+      .then(([res, c, s]) => {
+        setTransactions(res.data);
+        setTotalPages(res.pagination.totalPages);
+        setTotalItems(res.pagination.total);
+        setCurrentPage(res.pagination.page);
+        setCategories(c);
+        setSavings(s);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   };
