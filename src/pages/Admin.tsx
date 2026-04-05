@@ -430,6 +430,9 @@ export default function Admin() {
               <Button variant="outline" className="gap-2" onClick={handleGenerateSubs} disabled={generating}>
                 {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} Gerar Cobranças
               </Button>
+              <Button variant="outline" className="gap-2" onClick={handleDownloadPdf}>
+                <FileDown className="h-4 w-4" /> Gerar Relatório PDF
+              </Button>
               <Button className="gap-2" onClick={openCreateSub}><Plus className="h-4 w-4" /> Nova Cobrança</Button>
             </div>
           </div>
