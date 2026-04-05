@@ -12,6 +12,7 @@ import Categories from "./pages/Categories";
 import Reports from "./pages/Reports";
 import FixedExpenses from "./pages/FixedExpenses";
 import Admin from "./pages/Admin";
+import Savings from "./pages/Savings";
 import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
