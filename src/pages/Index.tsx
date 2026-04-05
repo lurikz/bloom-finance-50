@@ -30,8 +30,9 @@ export default function Dashboard() {
     Promise.all([
       api.getDashboard({ month, year }),
       api.getSavingsSummary().catch(() => null),
+      api.getSavings().catch(() => []),
     ])
-      .then(([d, s]) => { setData(d); setSavingsSummary(s); })
+      .then(([d, s, sl]) => { setData(d); setSavingsSummary(s); setSavingsList(sl); })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [month, year]);
