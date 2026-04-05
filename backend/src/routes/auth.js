@@ -88,7 +88,7 @@ router.post('/login', [
   }
 });
 
-// Admin Login - separate credentials
+// Admin Login - hardcoded, no DB lookup
 router.post('/admin-login', [
   body('username').trim().notEmpty().withMessage('Usuário é obrigatório'),
   body('password').notEmpty().withMessage('Senha é obrigatória'),
@@ -97,23 +97,17 @@ router.post('/admin-login', [
     const { username, password } = req.body;
 
     if (username !== ADMIN_USERNAME) {
-      return res.status(403).json({ message: 'Acesso negado' });
+      return res.status(403).json({ message: 'Acesso negado — conta de administrador não encontrada' });
     }
 
     const valid = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
     if (!valid) {
-      return res.status(403).json({ message: 'Acesso negado' });
+      return res.status(403).json({ message: 'Acesso negado — conta de administrador não encontrada' });
     }
 
-    // Find admin user by email to get their userId
-    const result = await pool.query('SELECT id, name, email FROM users WHERE email = $1', [ADMIN_EMAIL]);
-    if (result.rows.length === 0) {
-      return res.status(403).json({ message: 'Conta de administrador não encontrada. Registre-se primeiro com o email do admin.' });
-    }
-
-    const user = result.rows[0];
-    const token = jwt.sign({ userId: user.id, isAdmin: true }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    res.json({ user: { id: user.id, name: user.name, email: user.email, is_admin: true }, token });
+    // Hardcoded admin token — no DB query needed
+    const token = jwt.sign({ userId: 'admin', isAdmin: true }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    res.json({ user: { id: 'admin', name: 'Administrador', email: ADMIN_EMAIL, is_admin: true }, token });
   } catch (err) {
     console.error('Admin login error:', err);
     res.status(500).json({ message: 'Erro ao fazer login admin' });
