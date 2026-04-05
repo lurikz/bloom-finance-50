@@ -15,61 +15,86 @@ const validate = (req, res, next) => {
 // List
 router.get('/', async (req, res) => {
   try {
-    const { month, year, type, category, search, min_amount, max_amount, date_from, date_to } = req.query;
-    let query = `
-      SELECT t.*, c.name as category_name 
-      FROM transactions t 
-      LEFT JOIN categories c ON t.category_id = c.id 
-      WHERE t.user_id = $1
-    `;
+    const { month, year, type, category, search, min_amount, max_amount, date_from, date_to, page = '1', limit = '20' } = req.query;
+    
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
+    const offset = (pageNum - 1) * limitNum;
+
+    let whereClause = ' WHERE t.user_id = $1';
     const params = [req.userId];
     let idx = 2;
 
     // Month/year filter (ignored if custom date range is provided)
     if (!date_from && !date_to && month && year) {
-      query += ` AND EXTRACT(MONTH FROM t.date) = $${idx} AND EXTRACT(YEAR FROM t.date) = $${idx + 1}`;
+      whereClause += ` AND EXTRACT(MONTH FROM t.date) = $${idx} AND EXTRACT(YEAR FROM t.date) = $${idx + 1}`;
       params.push(Number(month), Number(year));
       idx += 2;
     }
     if (type && (type === 'income' || type === 'expense')) {
-      query += ` AND t.type = $${idx}`;
+      whereClause += ` AND t.type = $${idx}`;
       params.push(type);
       idx++;
     }
     if (category) {
-      query += ` AND t.category_id = $${idx}`;
+      whereClause += ` AND t.category_id = $${idx}`;
       params.push(category);
       idx++;
     }
     if (search && typeof search === 'string' && search.trim()) {
-      query += ` AND t.description ILIKE $${idx}`;
+      whereClause += ` AND t.description ILIKE $${idx}`;
       params.push(`%${search.trim()}%`);
       idx++;
     }
     if (min_amount && !isNaN(Number(min_amount))) {
-      query += ` AND t.amount >= $${idx}`;
+      whereClause += ` AND t.amount >= $${idx}`;
       params.push(Number(min_amount));
       idx++;
     }
     if (max_amount && !isNaN(Number(max_amount))) {
-      query += ` AND t.amount <= $${idx}`;
+      whereClause += ` AND t.amount <= $${idx}`;
       params.push(Number(max_amount));
       idx++;
     }
     if (date_from) {
-      query += ` AND t.date >= $${idx}`;
+      whereClause += ` AND t.date >= $${idx}`;
       params.push(date_from);
       idx++;
     }
     if (date_to) {
-      query += ` AND t.date <= $${idx}`;
+      whereClause += ` AND t.date <= $${idx}`;
       params.push(date_to);
       idx++;
     }
 
-    query += ' ORDER BY t.date DESC, t.created_at DESC';
+    // Count total
+    const countResult = await pool.query(
+      `SELECT COUNT(*) FROM transactions t ${whereClause}`,
+      params
+    );
+    const total = parseInt(countResult.rows[0].count);
+
+    // Fetch page
+    const query = `
+      SELECT t.*, c.name as category_name 
+      FROM transactions t 
+      LEFT JOIN categories c ON t.category_id = c.id 
+      ${whereClause}
+      ORDER BY t.date DESC, t.created_at DESC
+      LIMIT $${idx} OFFSET $${idx + 1}
+    `;
+    params.push(limitNum, offset);
+
     const result = await pool.query(query, params);
-    res.json(result.rows);
+    res.json({
+      data: result.rows,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum),
+      }
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Erro ao buscar transações' });
