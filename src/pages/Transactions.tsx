@@ -168,6 +168,26 @@ export default function Transactions() {
                     </Select>
                   </div>
                 </div>
+                {!editing && form.type === 'expense' && (
+                  <div className="space-y-3 rounded-lg border border-border p-3">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="recurring"
+                        checked={isRecurring}
+                        onChange={(e) => setIsRecurring(e.target.checked)}
+                        className="h-4 w-4 rounded border-border"
+                      />
+                      <Label htmlFor="recurring" className="cursor-pointer text-sm">Esta transação é recorrente?</Label>
+                    </div>
+                    {isRecurring && (
+                      <div className="space-y-2">
+                        <Label>Por quantos meses?</Label>
+                        <Input type="number" min="1" max="120" value={recurrenceMonths} onChange={(e) => setRecurrenceMonths(e.target.value)} />
+                      </div>
+                    )}
+                  </div>
+                )}
                 <Button type="submit" className="w-full">{editing ? 'Salvar' : 'Criar'}</Button>
               </form>
             </DialogContent>
