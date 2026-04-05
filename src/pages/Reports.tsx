@@ -36,6 +36,102 @@ export default function Reports() {
   const expenseCategories = data?.byCategory?.filter((c: any) => c.type === 'expense') || [];
   const incomeCategories = data?.byCategory?.filter((c: any) => c.type === 'income') || [];
 
+  const downloadPDF = () => {
+    if (!summary) return;
+    const doc = new jsPDF();
+    const monthName = MONTHS[month - 1];
+
+    // Title
+    doc.setFontSize(18);
+    doc.text(`Relatório Mensal - ${monthName} ${year}`, 14, 20);
+
+    // Summary
+    doc.setFontSize(12);
+    doc.text('Resumo', 14, 35);
+    doc.setFontSize(10);
+    doc.text(`Saldo: ${formatCurrency(summary.balance)}`, 14, 43);
+    doc.text(`Total Entradas: ${formatCurrency(summary.totalIncome)} (${summary.incomeCount} transações)`, 14, 50);
+    doc.text(`Total Saídas: ${formatCurrency(summary.totalExpense)} (${summary.expenseCount} transações)`, 14, 57);
+    doc.text(`Total de Transações: ${summary.totalTransactions}`, 14, 64);
+
+    let yPos = 75;
+
+    // Expense categories
+    if (expenseCategories.length > 0) {
+      doc.setFontSize(12);
+      doc.text('Saídas por Categoria', 14, yPos);
+      yPos += 3;
+      autoTable(doc, {
+        startY: yPos,
+        head: [['Categoria', 'Valor', '%']],
+        body: expenseCategories.map((c: any) => [
+          c.category,
+          formatCurrency(c.total),
+          `${(summary.totalExpense > 0 ? (c.total / summary.totalExpense * 100) : 0).toFixed(1)}%`,
+        ]),
+        theme: 'striped',
+        headStyles: { fillColor: [220, 53, 69] },
+        margin: { left: 14 },
+      });
+      yPos = (doc as any).lastAutoTable.finalY + 10;
+    }
+
+    // Income categories
+    if (incomeCategories.length > 0) {
+      if (yPos > 240) { doc.addPage(); yPos = 20; }
+      doc.setFontSize(12);
+      doc.text('Entradas por Categoria', 14, yPos);
+      yPos += 3;
+      autoTable(doc, {
+        startY: yPos,
+        head: [['Categoria', 'Valor', '%']],
+        body: incomeCategories.map((c: any) => [
+          c.category,
+          formatCurrency(c.total),
+          `${(summary.totalIncome > 0 ? (c.total / summary.totalIncome * 100) : 0).toFixed(1)}%`,
+        ]),
+        theme: 'striped',
+        headStyles: { fillColor: [40, 167, 69] },
+        margin: { left: 14 },
+      });
+      yPos = (doc as any).lastAutoTable.finalY + 10;
+    }
+
+    // Top expenses
+    if (data.topExpenses?.length > 0) {
+      if (yPos > 220) { doc.addPage(); yPos = 20; }
+      doc.setFontSize(12);
+      doc.text('Maiores Gastos do Mês', 14, yPos);
+      yPos += 3;
+      autoTable(doc, {
+        startY: yPos,
+        head: [['Descrição', 'Categoria', 'Data', 'Valor']],
+        body: data.topExpenses.map((t: any) => [
+          t.description,
+          t.category,
+          new Date(t.date).toLocaleDateString('pt-BR'),
+          formatCurrency(t.amount),
+        ]),
+        theme: 'striped',
+        headStyles: { fillColor: [220, 53, 69] },
+        margin: { left: 14 },
+      });
+    }
+
+    // Footer
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(150);
+      doc.text(`FinControl - Gerado em ${new Date().toLocaleDateString('pt-BR')}`, 14, 290);
+      doc.text(`Página ${i} de ${pageCount}`, 180, 290);
+    }
+
+    doc.save(`relatorio-${monthName.toLowerCase()}-${year}.pdf`);
+    toast({ title: 'PDF baixado com sucesso!' });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
