@@ -67,7 +67,7 @@ describe('GradientColorPicker', () => {
     fireEvent.click(screen.getByTestId('color-picker-trigger'));
     expect(screen.getByTestId('gradient-color-popover')).toBeInTheDocument();
 
-    fireEvent.pointerDown(screen.getByText('fora'));
+    fireEvent.pointerDown(document.body);
 
     await waitFor(() => {
       expect(screen.queryByTestId('gradient-color-popover')).not.toBeInTheDocument();
