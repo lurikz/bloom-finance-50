@@ -152,6 +152,9 @@ export default function Reports() {
               {[2024, 2025, 2026].map((y) => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
             </SelectContent>
           </Select>
+          <Button variant="outline" className="gap-2" onClick={downloadPDF} disabled={!summary || loading}>
+            <Download className="h-4 w-4" /> PDF
+          </Button>
         </div>
       </div>
 
