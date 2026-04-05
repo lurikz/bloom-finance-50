@@ -40,8 +40,8 @@ export default function Transactions() {
 
   const load = () => {
     setLoading(true);
-    Promise.all([api.getTransactions({ month, year }), api.getCategories()])
-      .then(([t, c]) => { setTransactions(t); setCategories(c); })
+    Promise.all([api.getTransactions({ month, year }), api.getCategories(), api.getSavings().catch(() => [])])
+      .then(([t, c, s]) => { setTransactions(t); setCategories(c); setSavings(s); })
       .catch(() => {})
       .finally(() => setLoading(false));
   };
