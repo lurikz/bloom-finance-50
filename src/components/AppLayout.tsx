@@ -4,18 +4,18 @@ import { LayoutDashboard, ArrowLeftRight, Tags, FileText, LogOut, Menu, X, Walle
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 
-const links = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/transactions', icon: ArrowLeftRight, label: 'Transações' },
-  { to: '/categories', icon: Tags, label: 'Categorias' },
-  { to: '/fixed-expenses', icon: Repeat, label: 'Gastos Fixos' },
-  { to: '/reports', icon: FileText, label: 'Relatórios' },
-  { to: '/admin', icon: Settings, label: 'Admin' },
-];
-
 export function AppLayout() {
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const links = [
+    { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+    { to: '/transactions', icon: ArrowLeftRight, label: 'Transações' },
+    { to: '/categories', icon: Tags, label: 'Categorias' },
+    { to: '/fixed-expenses', icon: Repeat, label: 'Gastos Fixos' },
+    { to: '/reports', icon: FileText, label: 'Relatórios' },
+    ...(isAdmin ? [{ to: '/admin', icon: Settings, label: 'Admin' }] : []),
+  ];
 
   return (
     <div className="flex min-h-screen bg-background">

@@ -1,12 +1,9 @@
 const API_URL = (() => {
   const env = import.meta.env.VITE_API_URL?.trim();
-  // If a non-localhost URL is explicitly configured, use it
   if (env && !/localhost|127\.0\.0\.1/.test(env)) return env;
-  // If running locally, use local backend
   if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
     return env || 'http://localhost:3001/api';
   }
-  // Production: always use the public backend
   return 'https://evolution-bloom-backend.exf0ty.easypanel.host/api';
 })();
 
@@ -96,4 +93,37 @@ export const api = {
   getDbStatus: () => request('/admin/db-status'),
   initDb: () => request('/admin/init-db', { method: 'POST' }),
   syncCategories: () => request('/admin/sync-categories', { method: 'POST' }),
+
+  // Admin - User Management
+  getAdminUsers: (status?: string) => {
+    const query = status ? `?status=${status}` : '';
+    return request(`/admin/users${query}`);
+  },
+  createAdminUser: (data: { name: string; email: string; password: string }) =>
+    request('/admin/users', { method: 'POST', body: JSON.stringify(data) }),
+  updateAdminUser: (id: string, data: { name?: string; email?: string; password?: string }) =>
+    request(`/admin/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteAdminUser: (id: string) =>
+    request(`/admin/users/${id}`, { method: 'DELETE' }),
+  blockUser: (id: string) =>
+    request(`/admin/users/${id}/block`, { method: 'POST' }),
+  unblockUser: (id: string) =>
+    request(`/admin/users/${id}/unblock`, { method: 'POST' }),
+
+  // Admin - Subscriptions
+  getSubscriptions: (params?: { user_id?: string; status?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.user_id) query.set('user_id', params.user_id);
+    if (params?.status) query.set('status', params.status);
+    return request(`/admin/subscriptions?${query.toString()}`);
+  },
+  createSubscription: (data: { user_id: string; amount: number; due_date: string }) =>
+    request('/admin/subscriptions', { method: 'POST', body: JSON.stringify(data) }),
+  paySubscription: (id: string) =>
+    request(`/admin/subscriptions/${id}/pay`, { method: 'POST' }),
+  deleteSubscription: (id: string) =>
+    request(`/admin/subscriptions/${id}`, { method: 'DELETE' }),
+
+  // Admin Dashboard
+  getAdminDashboard: () => request('/admin/dashboard'),
 };

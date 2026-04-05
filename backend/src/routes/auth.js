@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const { pool } = require('../db/connection');
 const { createDefaultCategoriesForUser } = require('../db/init');
+const { ADMIN_EMAIL } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -33,12 +34,10 @@ router.post('/register', [
       [name, email, hash]
     );
     const user = result.rows[0];
-
-    // Create default categories for the new user
     await createDefaultCategoriesForUser(user.id);
-
+    const isAdmin = email === ADMIN_EMAIL;
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    res.status(201).json({ user, token });
+    res.status(201).json({ user: { ...user, is_admin: isAdmin }, token });
   } catch (err) {
     console.error('Register error:', err);
     if (process.env.NODE_ENV !== 'production') {
@@ -59,24 +58,31 @@ router.post('/login', [
 ], validate, async (req, res) => {
   try {
     const { email, password } = req.body;
-    const result = await pool.query('SELECT id, name, email, password_hash FROM users WHERE email = $1', [email]);
+    const result = await pool.query('SELECT id, name, email, password_hash, is_blocked FROM users WHERE email = $1', [email]);
     if (result.rows.length === 0) {
       return res.status(401).json({ message: 'Email ou senha incorretos' });
     }
     const user = result.rows[0];
+
+    // Check if blocked
+    if (user.is_blocked) {
+      return res.status(403).json({ message: 'Sua conta está bloqueada. Entre em contato com o administrador.' });
+    }
+
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) {
       return res.status(401).json({ message: 'Email ou senha incorretos' });
     }
 
-    // Ensure user has default categories (for users created before this feature)
+    // Ensure user has default categories
     const catCount = await pool.query('SELECT COUNT(*) FROM categories WHERE user_id = $1', [user.id]);
     if (parseInt(catCount.rows[0].count) === 0) {
       await createDefaultCategoriesForUser(user.id);
     }
 
+    const isAdmin = email === ADMIN_EMAIL;
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    res.json({ user: { id: user.id, name: user.name, email: user.email }, token });
+    res.json({ user: { id: user.id, name: user.name, email: user.email, is_admin: isAdmin }, token });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Erro ao fazer login' });

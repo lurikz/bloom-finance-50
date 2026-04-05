@@ -1,4 +1,7 @@
 const jwt = require('jsonwebtoken');
+const { pool } = require('../db/connection');
+
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'padilha.ctt@gmail.com';
 
 function authenticate(req, res, next) {
   const header = req.headers.authorization;
@@ -15,4 +18,17 @@ function authenticate(req, res, next) {
   }
 }
 
-module.exports = { authenticate };
+async function requireAdmin(req, res, next) {
+  try {
+    const result = await pool.query('SELECT email FROM users WHERE id = $1', [req.userId]);
+    if (result.rows.length === 0 || result.rows[0].email !== ADMIN_EMAIL) {
+      return res.status(403).json({ message: 'Acesso restrito ao administrador' });
+    }
+    next();
+  } catch (err) {
+    console.error('Admin check error:', err);
+    return res.status(500).json({ message: 'Erro ao verificar permissão' });
+  }
+}
+
+module.exports = { authenticate, requireAdmin, ADMIN_EMAIL };
