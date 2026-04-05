@@ -101,9 +101,9 @@ export const api = {
     const query = status ? `?status=${status}` : '';
     return request(`/admin/users${query}`);
   },
-  createAdminUser: (data: { name: string; email: string; password: string }) =>
+  createAdminUser: (data: { name: string; email: string; password: string; client_type?: string; plan_amount?: number; due_day?: number }) =>
     request('/admin/users', { method: 'POST', body: JSON.stringify(data) }),
-  updateAdminUser: (id: string, data: { name?: string; email?: string; password?: string }) =>
+  updateAdminUser: (id: string, data: { name?: string; email?: string; password?: string; client_type?: string; plan_amount?: number; due_day?: number }) =>
     request(`/admin/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteAdminUser: (id: string) =>
     request(`/admin/users/${id}`, { method: 'DELETE' }),
