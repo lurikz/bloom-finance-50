@@ -298,26 +298,42 @@ export default function Reports() {
                 <CardTitle className="text-base">Maiores Gastos do Mês</CardTitle>
               </CardHeader>
               <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Descrição</TableHead>
-                      <TableHead>Categoria</TableHead>
-                      <TableHead>Data</TableHead>
-                      <TableHead className="text-right">Valor</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {data.topExpenses.map((t: any, i: number) => (
-                      <TableRow key={i}>
-                        <TableCell className="font-medium">{t.description}</TableCell>
-                        <TableCell className="text-muted-foreground">{t.category}</TableCell>
-                        <TableCell className="text-muted-foreground">{new Date(t.date).toLocaleDateString('pt-BR')}</TableCell>
-                        <TableCell className="text-right font-semibold text-[hsl(var(--expense))]">{formatCurrency(t.amount)}</TableCell>
+                {/* Desktop table */}
+                <div className="hidden md:block">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Descrição</TableHead>
+                        <TableHead>Categoria</TableHead>
+                        <TableHead>Data</TableHead>
+                        <TableHead className="text-right">Valor</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {data.topExpenses.map((t: any, i: number) => (
+                        <TableRow key={i}>
+                          <TableCell className="font-medium">{t.description}</TableCell>
+                          <TableCell className="text-muted-foreground">{t.category}</TableCell>
+                          <TableCell className="text-muted-foreground">{new Date(t.date).toLocaleDateString('pt-BR')}</TableCell>
+                          <TableCell className="text-right font-semibold text-[hsl(var(--expense))]">{formatCurrency(t.amount)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Mobile cards */}
+                <div className="md:hidden divide-y divide-border">
+                  {data.topExpenses.map((t: any, i: number) => (
+                    <div key={i} className="p-4 flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{t.description}</p>
+                        <p className="text-xs text-muted-foreground">{t.category} · {new Date(t.date).toLocaleDateString('pt-BR')}</p>
+                      </div>
+                      <p className="text-sm font-semibold text-[hsl(var(--expense))] shrink-0">{formatCurrency(t.amount)}</p>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           )}

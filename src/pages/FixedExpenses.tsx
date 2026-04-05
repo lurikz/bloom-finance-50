@@ -167,7 +167,8 @@ export default function FixedExpenses() {
 
       <Card>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
+          {/* Desktop table */}
+          <div className="hidden md:block overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -210,6 +211,36 @@ export default function FixedExpenses() {
                 )}
               </TableBody>
             </Table>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="md:hidden">
+            {loading ? (
+              <p className="text-center py-8 text-muted-foreground">Carregando...</p>
+            ) : items.length === 0 ? (
+              <p className="text-center py-8 text-muted-foreground">Nenhum gasto fixo</p>
+            ) : (
+              <div className="divide-y divide-border">
+                {items.map((fe) => (
+                  <div key={fe.id} className="p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Repeat className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <p className="text-sm font-medium text-foreground truncate">{fe.description}</p>
+                      </div>
+                      <p className="text-sm font-semibold text-[hsl(var(--expense))] shrink-0 ml-2">{formatCurrency(fe.amount)}</p>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-muted-foreground">{fe.category_name} · {new Date(fe.start_date).toLocaleDateString('pt-BR')} · {fe.recurrence_months} meses</p>
+                      <div className="flex gap-0.5 shrink-0">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(fe)}><Pencil className="h-3.5 w-3.5" /></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(fe.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
