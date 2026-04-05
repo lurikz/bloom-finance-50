@@ -26,6 +26,7 @@ async function ensureDatabaseInitialized() {
         name VARCHAR(100) NOT NULL,
         email VARCHAR(255) UNIQUE NOT NULL,
         password_hash VARCHAR(255) NOT NULL,
+        is_blocked BOOLEAN DEFAULT false,
         created_at TIMESTAMP DEFAULT NOW()
       );
 
@@ -63,15 +64,37 @@ async function ensureDatabaseInitialized() {
 
       ALTER TABLE transactions ADD COLUMN IF NOT EXISTS fixed_expense_id UUID REFERENCES fixed_expenses(id) ON DELETE SET NULL;
 
+      -- Add is_blocked column if not exists
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN DEFAULT false;
+
+      -- Subscriptions table
+      CREATE TABLE IF NOT EXISTS subscriptions (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        amount DECIMAL(12,2) NOT NULL CHECK (amount > 0),
+        due_date DATE NOT NULL,
+        status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'paid', 'overdue')),
+        paid_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+
       CREATE INDEX IF NOT EXISTS idx_transactions_user_date ON transactions(user_id, date);
       CREATE INDEX IF NOT EXISTS idx_categories_user ON categories(user_id);
       CREATE INDEX IF NOT EXISTS idx_fixed_expenses_user ON fixed_expenses(user_id);
       CREATE INDEX IF NOT EXISTS idx_transactions_fixed_expense ON transactions(fixed_expense_id);
+      CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON subscriptions(user_id);
+      CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON subscriptions(status);
     `);
 
     // Drop is_default column if it exists (migration from old schema)
     await client.query(`ALTER TABLE categories DROP COLUMN IF EXISTS is_default`);
     await client.query(`DELETE FROM categories WHERE user_id IS NULL`);
+
+    // Auto-mark overdue subscriptions
+    await client.query(`
+      UPDATE subscriptions SET status = 'overdue' 
+      WHERE status = 'pending' AND due_date < CURRENT_DATE
+    `);
 
     await client.query('COMMIT');
     console.log('Database schema is ready');
