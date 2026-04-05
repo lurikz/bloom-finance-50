@@ -58,10 +58,21 @@ async function ensureDatabaseInitialized() {
       ALTER TABLE transactions ADD COLUMN IF NOT EXISTS fixed_expense_id UUID REFERENCES fixed_expenses(id) ON DELETE SET NULL;
       ALTER TABLE categories ADD COLUMN IF NOT EXISTS color VARCHAR(7);
 
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_categories_default_unique ON categories (name, type) WHERE user_id IS NULL AND is_default = TRUE;
+
       CREATE INDEX IF NOT EXISTS idx_transactions_user_date ON transactions(user_id, date);
       CREATE INDEX IF NOT EXISTS idx_categories_user ON categories(user_id);
       CREATE INDEX IF NOT EXISTS idx_fixed_expenses_user ON fixed_expenses(user_id);
       CREATE INDEX IF NOT EXISTS idx_transactions_fixed_expense ON transactions(fixed_expense_id);
+    `);
+
+    // Remove duplicate default categories (keep only the oldest one per name+type)
+    await client.query(`
+      DELETE FROM categories
+      WHERE is_default = TRUE AND user_id IS NULL
+        AND id NOT IN (
+          SELECT MIN(id) FROM categories WHERE is_default = TRUE AND user_id IS NULL GROUP BY name, type
+        )
     `);
 
     for (const [name, type] of defaults) {
