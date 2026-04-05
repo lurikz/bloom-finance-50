@@ -143,4 +143,18 @@ export const api = {
     request('/profile/email', { method: 'PUT', body: JSON.stringify({ email, current_password }) }),
   updateProfilePassword: (current_password: string, new_password: string) =>
     request('/profile/password', { method: 'PUT', body: JSON.stringify({ current_password, new_password }) }),
+
+  // Savings
+  getSavings: () => request('/savings'),
+  createSaving: (data: { name: string; target_amount?: number }) =>
+    request('/savings', { method: 'POST', body: JSON.stringify(data) }),
+  depositSaving: (id: string, data: { amount: number; description?: string }) =>
+    request(`/savings/${id}/deposit`, { method: 'POST', body: JSON.stringify(data) }),
+  withdrawSaving: (id: string, data: { amount: number; description?: string }) =>
+    request(`/savings/${id}/withdraw`, { method: 'POST', body: JSON.stringify(data) }),
+  deleteSaving: (id: string) =>
+    request(`/savings/${id}`, { method: 'DELETE' }),
+  getSavingMovements: (id: string) =>
+    request(`/savings/${id}/movements`),
+  getSavingsSummary: () => request('/savings/summary/total'),
 };
