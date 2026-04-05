@@ -35,8 +35,12 @@ router.post('/register', [
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '7d' });
     res.status(201).json({ user, token });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Erro ao criar conta' });
+    console.error('Register error:', err);
+    const detail = err.code === 'ECONNREFUSED' ? 'Banco de dados não acessível'
+      : err.code === '42P01' ? 'Tabela users não existe. Execute o script init.sql'
+      : err.code === '28P01' ? 'Credenciais do banco inválidas'
+      : err.message || 'Erro desconhecido';
+    res.status(500).json({ message: 'Erro ao criar conta', detail });
   }
 });
 
