@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { LayoutDashboard, ArrowLeftRight, Tags, FileText, LogOut, Menu, X, Wallet, Repeat, Settings, UserCog, PiggyBank } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 export function AppLayout() {
   const { user, logout, isAdmin } = useAuth();
@@ -46,11 +47,14 @@ export function AppLayout() {
             </NavLink>
           ))}
         </nav>
-        <div className="border-t border-border pt-4">
-          <p className="text-xs text-muted-foreground mb-2 truncate">{user?.email}</p>
-          <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-muted-foreground" onClick={logout}>
-            <LogOut className="h-4 w-4" /> Sair
-          </Button>
+        <div className="border-t border-border pt-4 flex items-center justify-between">
+          <div>
+            <p className="text-xs text-muted-foreground mb-2 truncate">{user?.email}</p>
+            <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-muted-foreground" onClick={logout}>
+              <LogOut className="h-4 w-4" /> Sair
+            </Button>
+          </div>
+          <ThemeToggle />
         </div>
       </aside>
 
@@ -61,9 +65,12 @@ export function AppLayout() {
             <Wallet className="h-6 w-6 text-primary" />
             <span className="text-lg font-bold">FinControl</span>
           </div>
-          <Button variant="ghost" size="icon" onClick={() => setMenuOpen(!menuOpen)}>
-            {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </Button>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <Button variant="ghost" size="icon" onClick={() => setMenuOpen(!menuOpen)}>
+              {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+          </div>
         </header>
 
         {menuOpen && (
