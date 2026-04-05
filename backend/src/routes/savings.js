@@ -138,10 +138,18 @@ router.post('/:id/withdraw', [
       [amount, savingId]
     );
 
+    const txDescription = description || `Retirada de ${saving.rows[0].name}`;
+
     // Record movement
     await client.query(
       `INSERT INTO savings_movements (saving_id, user_id, type, amount, description) VALUES ($1, $2, 'withdraw', $3, $4)`,
-      [savingId, req.userId, amount, description || `Retirada de ${saving.rows[0].name}`]
+      [savingId, req.userId, amount, txDescription]
+    );
+
+    // Create income transaction (money returning from savings to wallet)
+    await client.query(
+      `INSERT INTO transactions (description, amount, type, user_id, date) VALUES ($1, $2, 'income', $3, CURRENT_DATE)`,
+      [txDescription, amount, req.userId]
     );
 
     await client.query('COMMIT');
