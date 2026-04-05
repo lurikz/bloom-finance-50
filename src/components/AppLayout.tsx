@@ -1,6 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { LayoutDashboard, ArrowLeftRight, Tags, FileText, LogOut, Menu, X, Wallet, Repeat, Settings, UserCog } from 'lucide-react';
+import { LayoutDashboard, ArrowLeftRight, Tags, FileText, LogOut, Menu, X, Wallet, Repeat, Settings, UserCog, PiggyBank } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 
