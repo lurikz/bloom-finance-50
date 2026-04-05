@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const { pool } = require('../db/connection');
 const { createDefaultCategoriesForUser } = require('../db/init');
-const { ADMIN_EMAIL } = require('../middleware/auth');
+const { ADMIN_EMAIL, ADMIN_USERNAME, ADMIN_PASSWORD_HASH } = require('../middleware/auth');
 
 const router = express.Router();
 
