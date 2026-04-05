@@ -102,6 +102,25 @@ async function ensureDatabaseInitialized() {
         created_at TIMESTAMP DEFAULT NOW()
       );
 
+      CREATE TABLE IF NOT EXISTS notifications (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        title VARCHAR(200) NOT NULL,
+        message TEXT NOT NULL,
+        type VARCHAR(20) NOT NULL DEFAULT 'system' CHECK (type IN ('income', 'expense', 'reminder', 'alert', 'system')),
+        target VARCHAR(10) NOT NULL DEFAULT 'all' CHECK (target IN ('all', 'user')),
+        target_user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+        sent_by VARCHAR(100) NOT NULL DEFAULT 'admin',
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS notification_reads (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        notification_id UUID NOT NULL REFERENCES notifications(id) ON DELETE CASCADE,
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        read_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(notification_id, user_id)
+      );
+
       CREATE INDEX IF NOT EXISTS idx_transactions_user_date ON transactions(user_id, date);
       CREATE INDEX IF NOT EXISTS idx_categories_user ON categories(user_id);
       CREATE INDEX IF NOT EXISTS idx_fixed_expenses_user ON fixed_expenses(user_id);
@@ -110,6 +129,8 @@ async function ensureDatabaseInitialized() {
       CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON subscriptions(status);
       CREATE INDEX IF NOT EXISTS idx_savings_user ON savings(user_id);
       CREATE INDEX IF NOT EXISTS idx_savings_movements_saving ON savings_movements(saving_id);
+      CREATE INDEX IF NOT EXISTS idx_notifications_target ON notifications(target, target_user_id);
+      CREATE INDEX IF NOT EXISTS idx_notification_reads_user ON notification_reads(user_id);
     `);
 
     // Drop is_default column if it exists (migration from old schema)
