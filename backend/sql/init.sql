@@ -44,14 +44,9 @@ CREATE INDEX IF NOT EXISTS idx_categories_user ON categories(user_id);
 INSERT INTO categories (name, type, user_id, is_default) VALUES
     ('Salário', 'income', NULL, TRUE),
     ('Freelance', 'income', NULL, TRUE),
-    ('Investimentos', 'income', NULL, TRUE),
-    ('Outros', 'income', NULL, TRUE),
     ('Alimentação', 'expense', NULL, TRUE),
     ('Transporte', 'expense', NULL, TRUE),
     ('Moradia', 'expense', NULL, TRUE),
-    ('Saúde', 'expense', NULL, TRUE),
-    ('Educação', 'expense', NULL, TRUE),
     ('Lazer', 'expense', NULL, TRUE),
-    ('Vestuário', 'expense', NULL, TRUE),
-    ('Outros', 'expense', NULL, TRUE)
+    ('Saúde', 'expense', NULL, TRUE)
 ON CONFLICT DO NOTHING;
