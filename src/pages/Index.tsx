@@ -155,6 +155,42 @@ export default function Dashboard() {
         </Card>
       </div>
 
+      {/* Savings List */}
+      {savingsList.length > 0 && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2">
+              <PiggyBank className="h-4 w-4 text-primary" /> Minhas Economias
+            </CardTitle>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/savings')}>Ver todas</Button>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {savingsList.slice(0, 4).map((s: any) => {
+                const progress = s.target_amount ? Math.min((s.current_amount / s.target_amount) * 100, 100) : null;
+                return (
+                  <div key={s.id} className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium text-foreground">{s.name}</p>
+                      <p className="text-sm font-semibold text-[hsl(var(--income))]">{formatCurrency(s.current_amount)}</p>
+                    </div>
+                    {progress !== null && (
+                      <div className="flex items-center gap-2">
+                        <Progress value={progress} className="h-1.5 flex-1" />
+                        <span className="text-xs text-muted-foreground w-10 text-right">{progress.toFixed(0)}%</span>
+                      </div>
+                    )}
+                    {s.target_amount && (
+                      <p className="text-xs text-muted-foreground">Meta: {formatCurrency(s.target_amount)}</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Recent transactions */}
       <Card>
         <CardHeader>

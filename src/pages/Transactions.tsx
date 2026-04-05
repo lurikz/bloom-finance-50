@@ -185,7 +185,7 @@ export default function Transactions() {
                         type="checkbox"
                         id="recurring"
                         checked={isRecurring}
-                        onChange={(e) => setIsRecurring(e.target.checked)}
+                        onChange={(e) => { setIsRecurring(e.target.checked); if (e.target.checked) setAddToSaving(false); }}
                         className="h-4 w-4 rounded border-border"
                       />
                       <Label htmlFor="recurring" className="cursor-pointer text-sm">Esta transação é recorrente?</Label>
@@ -194,6 +194,35 @@ export default function Transactions() {
                       <div className="space-y-2">
                         <Label>Por quantos meses?</Label>
                         <Input type="number" min="1" max="120" value={recurrenceMonths} onChange={(e) => setRecurrenceMonths(e.target.value)} />
+                      </div>
+                    )}
+                  </div>
+                )}
+                {!editing && form.type === 'expense' && !isRecurring && savings.length > 0 && (
+                  <div className="space-y-3 rounded-lg border border-border p-3">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="addToSaving"
+                        checked={addToSaving}
+                        onChange={(e) => { setAddToSaving(e.target.checked); if (!e.target.checked) setSelectedSavingId(''); }}
+                        className="h-4 w-4 rounded border-border"
+                      />
+                      <Label htmlFor="addToSaving" className="cursor-pointer text-sm">Adicionar a uma economia?</Label>
+                    </div>
+                    {addToSaving && (
+                      <div className="space-y-2">
+                        <Label>Economia</Label>
+                        <Select value={selectedSavingId} onValueChange={setSelectedSavingId}>
+                          <SelectTrigger><SelectValue placeholder="Selecione a economia" /></SelectTrigger>
+                          <SelectContent>
+                            {savings.map(s => (
+                              <SelectItem key={s.id} value={s.id}>
+                                {s.name} ({formatCurrency(s.current_amount)})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     )}
                   </div>
