@@ -16,6 +16,7 @@ function formatCurrency(v: number) {
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [year, setYear] = useState(now.getFullYear());
