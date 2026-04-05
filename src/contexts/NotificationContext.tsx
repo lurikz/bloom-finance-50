@@ -50,6 +50,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     if (!token) return;
     try {
       const data = await api.getMyNotifications();
+      if (!Array.isArray(data)) return;
       setServerNotifs(data.map((n: any) => ({
         id: n.id,
         type: n.type as NotificationType,
