@@ -56,7 +56,38 @@ export default function Transactions() {
   const [addToSaving, setAddToSaving] = useState(false);
   const [selectedSavingId, setSelectedSavingId] = useState('');
 
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
   const hasActiveFilters = searchTerm || filterType !== 'all' || filterCategory !== 'all' || minAmount || maxAmount || dateFrom || dateTo;
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (selectedIds.size === transactions.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(transactions.map(t => t.id)));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Excluir ${selectedIds.size} transação(ões)?`)) return;
+    try {
+      await api.bulkDeleteTransactions(Array.from(selectedIds));
+      toast({ title: `${selectedIds.size} transação(ões) excluída(s)` });
+      setSelectedIds(new Set());
+      load();
+    } catch (err: any) {
+      toast({ title: 'Erro', description: err.message, variant: 'destructive' });
+    }
+  };
 
   const load = (page = currentPage) => {
     setLoading(true);
