@@ -95,4 +95,5 @@ export const api = {
   // Admin
   getDbStatus: () => request('/admin/db-status'),
   initDb: () => request('/admin/init-db', { method: 'POST' }),
+  syncCategories: () => request('/admin/sync-categories', { method: 'POST' }),
 };
