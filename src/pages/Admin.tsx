@@ -53,6 +53,7 @@ interface Subscription {
   status: string;
   paid_at: string | null;
   created_at: string;
+  is_lost?: boolean;
 }
 
 interface AdminDashData {
@@ -67,8 +68,9 @@ interface AdminDashData {
   monthlyRevenue: { month: string; total: number }[];
 }
 
-const STATUS_LABELS: Record<string, string> = { pending: 'Pendente', paid: 'Pago', overdue: 'Vencido' };
+const STATUS_LABELS: Record<string, string> = { pending: 'Pendente', paid: 'Pago', overdue: 'Atrasado' };
 const STATUS_COLORS: Record<string, string> = { pending: 'hsl(40,90%,55%)', paid: 'hsl(160,84%,39%)', overdue: 'hsl(0,84%,60%)' };
+const MONTH_NAMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const CLIENT_TYPE_LABELS: Record<string, string> = { recurring: 'Recorrente', lifetime: 'Vitalício' };
 
 export default function Admin() {
@@ -91,6 +93,8 @@ export default function Admin() {
   const [subs, setSubs] = useState<Subscription[]>([]);
   const [subsLoading, setSubsLoading] = useState(false);
   const [subFilter, setSubFilter] = useState('all');
+  const [subMonth, setSubMonth] = useState('');
+  const [subYear, setSubYear] = useState('');
   const [subDialog, setSubDialog] = useState(false);
   const [subForm, setSubForm] = useState({ user_id: '', amount: '', due_date: '' });
   const [generating, setGenerating] = useState(false);
@@ -108,7 +112,13 @@ export default function Admin() {
   };
   const loadSubs = async () => {
     setSubsLoading(true);
-    try { setSubs(await api.getSubscriptions(subFilter === 'all' ? undefined : { status: subFilter })); } catch { } finally { setSubsLoading(false); }
+    try {
+      const params: any = {};
+      if (subFilter !== 'all') params.status = subFilter;
+      if (subMonth) params.month = parseInt(subMonth);
+      if (subYear) params.year = parseInt(subYear);
+      setSubs(await api.getSubscriptions(Object.keys(params).length ? params : undefined));
+    } catch { } finally { setSubsLoading(false); }
   };
   const loadDash = async () => {
     setDashLoading(true);
@@ -117,7 +127,7 @@ export default function Admin() {
 
   useEffect(() => { if (isAdmin) { loadDbStatus(); loadUsers(); loadSubs(); loadDash(); } }, [isAdmin]);
   useEffect(() => { if (isAdmin) loadUsers(); }, [userFilter, isAdmin]);
-  useEffect(() => { if (isAdmin) loadSubs(); }, [subFilter, isAdmin]);
+  useEffect(() => { if (isAdmin) loadSubs(); }, [subFilter, subMonth, subYear, isAdmin]);
 
   if (!isAdmin) return <Navigate to="/" replace />;
 
@@ -337,16 +347,33 @@ export default function Admin() {
         {/* ========== COBRANÇAS ========== */}
         <TabsContent value="billing" className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <Select value={subFilter} onValueChange={(v) => { setSubFilter(v); if (v !== 'due_soon') loadSubs(); }}>
-              <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas</SelectItem>
-                <SelectItem value="due_soon">Próx. do vencimento (5 dias)</SelectItem>
-                <SelectItem value="overdue">Vencidas</SelectItem>
-                <SelectItem value="paid">Pagas</SelectItem>
-                <SelectItem value="pending">Pendentes</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex flex-wrap gap-2">
+              <Select value={subFilter} onValueChange={setSubFilter}>
+                <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os status</SelectItem>
+                  <SelectItem value="pending">Pendentes</SelectItem>
+                  <SelectItem value="paid">Pagos</SelectItem>
+                  <SelectItem value="overdue">Atrasados</SelectItem>
+                  <SelectItem value="lost">Perdidos (+30 dias)</SelectItem>
+                  <SelectItem value="due_soon">Próx. do vencimento</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={subMonth} onValueChange={setSubMonth}>
+                <SelectTrigger className="w-[140px]"><SelectValue placeholder="Mês" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos os meses</SelectItem>
+                  {MONTH_NAMES.map((m, i) => <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={subYear} onValueChange={setSubYear}>
+                <SelectTrigger className="w-[110px]"><SelectValue placeholder="Ano" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos</SelectItem>
+                  {[2024, 2025, 2026, 2027].map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="flex gap-2">
               <Button variant="outline" className="gap-2" onClick={handleGenerateSubs} disabled={generating}>
                 {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} Gerar Cobranças
@@ -372,7 +399,7 @@ export default function Admin() {
                     <TableCell className="text-sm">{new Date(s.due_date).toLocaleDateString('pt-BR')}</TableCell>
                     <TableCell>
                       <Badge variant={s.status === 'paid' ? 'default' : s.status === 'overdue' ? 'destructive' : 'secondary'}>
-                        {STATUS_LABELS[s.status]}
+                        {s.is_lost ? 'Perdido' : STATUS_LABELS[s.status]}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">{s.paid_at ? new Date(s.paid_at).toLocaleDateString('pt-BR') : '—'}</TableCell>

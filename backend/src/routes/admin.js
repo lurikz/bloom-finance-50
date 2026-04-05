@@ -241,9 +241,13 @@ router.post('/users/:id/unblock', async (req, res) => {
 
 router.get('/subscriptions', async (req, res) => {
   try {
-    const { user_id, status } = req.query;
+    const { user_id, status, month, year } = req.query;
+
+    // Auto-update overdue before querying
+    await pool.query(`UPDATE subscriptions SET status = 'overdue' WHERE status = 'pending' AND due_date < CURRENT_DATE`);
+
     let query = `
-      SELECT s.*, u.name as user_name, u.email as user_email
+      SELECT s.*, u.name as user_name, u.email as user_email, u.client_type
       FROM subscriptions s
       JOIN users u ON u.id = s.user_id
     `;
@@ -251,7 +255,17 @@ router.get('/subscriptions', async (req, res) => {
     const params = [];
     let idx = 1;
     if (user_id) { conditions.push(`s.user_id = $${idx++}`); params.push(user_id); }
-    if (status) { conditions.push(`s.status = $${idx++}`); params.push(status); }
+    if (status === 'lost') {
+      conditions.push(`s.status = 'overdue' AND s.due_date < CURRENT_DATE - INTERVAL '30 days'`);
+    } else if (status) {
+      conditions.push(`s.status = $${idx++}`); params.push(status);
+    }
+    if (month && year) {
+      conditions.push(`EXTRACT(MONTH FROM s.due_date) = $${idx++}`); params.push(parseInt(month as string));
+      conditions.push(`EXTRACT(YEAR FROM s.due_date) = $${idx++}`); params.push(parseInt(year as string));
+    } else if (year) {
+      conditions.push(`EXTRACT(YEAR FROM s.due_date) = $${idx++}`); params.push(parseInt(year as string));
+    }
     if (conditions.length) query += ' WHERE ' + conditions.join(' AND ');
     query += ' ORDER BY s.due_date DESC';
 
@@ -259,10 +273,11 @@ router.get('/subscriptions', async (req, res) => {
     res.json(result.rows.map(r => ({
       ...r,
       amount: parseFloat(r.amount),
+      is_lost: r.status === 'overdue' && new Date(r.due_date) < new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
     })));
   } catch (err) {
     console.error('Admin subscriptions error:', err);
-    res.status(500).json({ message: 'Erro ao listar mensalidades' });
+    res.status(500).json({ message: 'Erro ao listar cobranças' });
   }
 });
 
