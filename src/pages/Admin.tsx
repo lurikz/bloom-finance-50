@@ -53,6 +53,7 @@ interface Subscription {
   status: string;
   paid_at: string | null;
   created_at: string;
+  is_lost?: boolean;
 }
 
 interface AdminDashData {
