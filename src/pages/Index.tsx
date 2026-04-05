@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TrendingUp, TrendingDown, Wallet, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, ArrowUpRight, ArrowDownRight, PiggyBank } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -18,11 +18,15 @@ export default function Dashboard() {
   const [year, setYear] = useState(now.getFullYear());
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [savingsSummary, setSavingsSummary] = useState<{ totalSaved: number; count: number } | null>(null);
 
   useEffect(() => {
     setLoading(true);
-    api.getDashboard({ month, year })
-      .then(setData)
+    Promise.all([
+      api.getDashboard({ month, year }),
+      api.getSavingsSummary().catch(() => null),
+    ])
+      .then(([d, s]) => { setData(d); setSavingsSummary(s); })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [month, year]);
@@ -50,7 +54,7 @@ export default function Dashboard() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Saldo</CardTitle>
@@ -78,6 +82,18 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-[hsl(var(--expense))]">{loading ? '...' : formatCurrency(data?.totalExpense || 0)}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Guardado</CardTitle>
+            <PiggyBank className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold text-primary">{loading ? '...' : formatCurrency(savingsSummary?.totalSaved || 0)}</p>
+            {savingsSummary && savingsSummary.count > 0 && (
+              <p className="text-xs text-muted-foreground mt-1">{savingsSummary.count} economia{savingsSummary.count > 1 ? 's' : ''}</p>
+            )}
           </CardContent>
         </Card>
       </div>

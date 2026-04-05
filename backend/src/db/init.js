@@ -83,12 +83,33 @@ async function ensureDatabaseInitialized() {
         created_at TIMESTAMP DEFAULT NOW()
       );
 
+      CREATE TABLE IF NOT EXISTS savings (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        name VARCHAR(100) NOT NULL,
+        current_amount DECIMAL(12,2) NOT NULL DEFAULT 0 CHECK (current_amount >= 0),
+        target_amount DECIMAL(12,2),
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS savings_movements (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        saving_id UUID NOT NULL REFERENCES savings(id) ON DELETE CASCADE,
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        type VARCHAR(10) NOT NULL CHECK (type IN ('deposit', 'withdraw')),
+        amount DECIMAL(12,2) NOT NULL CHECK (amount > 0),
+        description VARCHAR(100),
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+
       CREATE INDEX IF NOT EXISTS idx_transactions_user_date ON transactions(user_id, date);
       CREATE INDEX IF NOT EXISTS idx_categories_user ON categories(user_id);
       CREATE INDEX IF NOT EXISTS idx_fixed_expenses_user ON fixed_expenses(user_id);
       CREATE INDEX IF NOT EXISTS idx_transactions_fixed_expense ON transactions(fixed_expense_id);
       CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON subscriptions(user_id);
       CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON subscriptions(status);
+      CREATE INDEX IF NOT EXISTS idx_savings_user ON savings(user_id);
+      CREATE INDEX IF NOT EXISTS idx_savings_movements_saving ON savings_movements(saving_id);
     `);
 
     // Drop is_default column if it exists (migration from old schema)
