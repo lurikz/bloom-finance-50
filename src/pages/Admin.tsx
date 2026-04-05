@@ -260,7 +260,55 @@ export default function Admin() {
     doc.save(`relatorio-cobrancas-${monthFile}.pdf`);
   };
 
-  const requiredTables = ['users', 'categories', 'transactions', 'fixed_expenses', 'subscriptions'];
+  // Notification handlers
+  const handleSendNotification = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!notifForm.title.trim() || !notifForm.message.trim()) {
+      toast({ title: 'Preencha título e mensagem', variant: 'destructive' });
+      return;
+    }
+    if (notifForm.target === 'user' && !notifForm.target_user_id) {
+      toast({ title: 'Selecione um usuário', variant: 'destructive' });
+      return;
+    }
+    setNotifSending(true);
+    try {
+      await api.sendNotification({
+        title: notifForm.title.trim(),
+        message: notifForm.message.trim(),
+        type: notifForm.type,
+        target: notifForm.target,
+        target_user_id: notifForm.target === 'user' ? notifForm.target_user_id : undefined,
+      });
+      toast({ title: '✅ Notificação enviada com sucesso!' });
+      setNotifForm({ title: '', message: '', type: 'system', target: 'all', target_user_id: '' });
+      loadNotifHistory();
+    } catch (err: any) {
+      toast({ title: 'Erro', description: err.message, variant: 'destructive' });
+    } finally {
+      setNotifSending(false);
+    }
+  };
+
+  const handleDeleteNotif = async (id: string) => {
+    if (!confirm('Excluir esta notificação?')) return;
+    try {
+      await api.deleteNotification(id);
+      toast({ title: 'Notificação excluída' });
+      loadNotifHistory();
+    } catch (err: any) {
+      toast({ title: 'Erro', description: err.message, variant: 'destructive' });
+    }
+  };
+
+  const NOTIF_TYPE_LABELS: Record<string, string> = { income: 'Financeiro (entrada)', expense: 'Financeiro (saída)', reminder: 'Lembrete', alert: 'Alerta', system: 'Sistema' };
+  const filteredUsersForNotif = users.filter(u => {
+    if (!userSearch) return true;
+    const s = userSearch.toLowerCase();
+    return u.name.toLowerCase().includes(s) || u.email.toLowerCase().includes(s);
+  });
+
+  const requiredTables = ['users', 'categories', 'transactions', 'fixed_expenses', 'subscriptions', 'notifications'];
   const allTablesExist = dbStatus ? requiredTables.every((t: string) => dbStatus.tables?.includes(t)) : false;
 
   const pieData = dash?.statusBreakdown?.map(s => ({ name: STATUS_LABELS[s.status] || s.status, value: s.total, color: STATUS_COLORS[s.status] || '#999' })) || [];
