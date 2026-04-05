@@ -71,6 +71,7 @@ router.get('/users', async (req, res) => {
     const { status } = req.query;
     let query = `
       SELECT u.id, u.name, u.email, u.is_blocked, u.created_at,
+        u.client_type, u.plan_amount, u.due_day,
         s.id as sub_id, s.amount as sub_amount, s.due_date as sub_due_date, 
         s.status as sub_status, s.paid_at as sub_paid_at
       FROM users u
@@ -101,6 +102,9 @@ router.get('/users', async (req, res) => {
       email: r.email,
       is_blocked: r.is_blocked,
       created_at: r.created_at,
+      client_type: r.client_type || 'recurring',
+      plan_amount: r.plan_amount ? parseFloat(r.plan_amount) : null,
+      due_day: r.due_day,
       latest_subscription: r.sub_id ? {
         id: r.sub_id,
         amount: parseFloat(r.sub_amount),
@@ -120,17 +124,35 @@ router.post('/users', [
   body('name').trim().notEmpty().withMessage('Nome é obrigatório').isLength({ max: 100 }),
   body('email').trim().isEmail().withMessage('Email inválido').normalizeEmail(),
   body('password').isLength({ min: 6 }).withMessage('Senha deve ter no mínimo 6 caracteres'),
+  body('client_type').optional().isIn(['recurring', 'lifetime']),
+  body('plan_amount').optional().isFloat({ min: 0.01 }),
+  body('due_day').optional().isInt({ min: 1, max: 31 }),
 ], validate, async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, client_type = 'recurring', plan_amount, due_day } = req.body;
     const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
     if (existing.rows.length > 0) return res.status(400).json({ message: 'Email já cadastrado' });
     const hash = await bcrypt.hash(password, 12);
     const result = await pool.query(
-      'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id, name, email, is_blocked, created_at',
-      [name, email, hash]
+      `INSERT INTO users (name, email, password_hash, client_type, plan_amount, due_day) 
+       VALUES ($1, $2, $3, $4, $5, $6) 
+       RETURNING id, name, email, is_blocked, created_at, client_type, plan_amount, due_day`,
+      [name, email, hash, client_type, plan_amount || null, due_day || null]
     );
-    res.status(201).json(result.rows[0]);
+    const user = result.rows[0];
+
+    // Auto-generate first subscription for recurring clients
+    if (client_type === 'recurring' && plan_amount && due_day) {
+      const now = new Date();
+      const dueDate = new Date(now.getFullYear(), now.getMonth(), due_day);
+      if (dueDate < now) dueDate.setMonth(dueDate.getMonth() + 1);
+      await pool.query(
+        `INSERT INTO subscriptions (user_id, amount, due_date, status) VALUES ($1, $2, $3, 'pending')`,
+        [user.id, plan_amount, dueDate.toISOString().split('T')[0]]
+      );
+    }
+
+    res.status(201).json(user);
   } catch (err) {
     console.error('Admin create user error:', err);
     res.status(500).json({ message: 'Erro ao criar usuário' });
@@ -141,10 +163,13 @@ router.put('/users/:id', [
   body('name').optional().trim().notEmpty().isLength({ max: 100 }),
   body('email').optional().trim().isEmail().normalizeEmail(),
   body('password').optional().isLength({ min: 6 }),
+  body('client_type').optional().isIn(['recurring', 'lifetime']),
+  body('plan_amount').optional().isFloat({ min: 0.01 }),
+  body('due_day').optional().isInt({ min: 1, max: 31 }),
 ], validate, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, password } = req.body;
+    const { name, email, password, client_type, plan_amount, due_day } = req.body;
     const sets = [];
     const params = [];
     let idx = 1;
@@ -156,10 +181,13 @@ router.put('/users/:id', [
       sets.push(`password_hash = $${idx++}`);
       params.push(hash);
     }
+    if (client_type) { sets.push(`client_type = $${idx++}`); params.push(client_type); }
+    if (plan_amount !== undefined) { sets.push(`plan_amount = $${idx++}`); params.push(plan_amount); }
+    if (due_day !== undefined) { sets.push(`due_day = $${idx++}`); params.push(due_day); }
     if (sets.length === 0) return res.status(400).json({ message: 'Nenhum dado para atualizar' });
     params.push(id);
     const result = await pool.query(
-      `UPDATE users SET ${sets.join(', ')} WHERE id = $${idx} RETURNING id, name, email, is_blocked, created_at`,
+      `UPDATE users SET ${sets.join(', ')} WHERE id = $${idx} RETURNING id, name, email, is_blocked, created_at, client_type, plan_amount, due_day`,
       params
     );
     if (result.rows.length === 0) return res.status(404).json({ message: 'Usuário não encontrado' });
@@ -271,6 +299,24 @@ router.post('/subscriptions/:id/pay', async (req, res) => {
   }
 });
 
+router.put('/subscriptions/:id/status', [
+  body('status').isIn(['pending', 'paid', 'overdue']).withMessage('Status inválido'),
+], validate, async (req, res) => {
+  try {
+    const { status } = req.body;
+    const paid_at = status === 'paid' ? 'NOW()' : 'NULL';
+    const result = await pool.query(
+      `UPDATE subscriptions SET status = $1, paid_at = ${paid_at} WHERE id = $2 RETURNING *`,
+      [status, req.params.id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ message: 'Mensalidade não encontrada' });
+    res.json({ ...result.rows[0], amount: parseFloat(result.rows[0].amount) });
+  } catch (err) {
+    console.error('Admin update subscription status error:', err);
+    res.status(500).json({ message: 'Erro ao atualizar status' });
+  }
+});
+
 router.delete('/subscriptions/:id', async (req, res) => {
   try {
     const result = await pool.query('DELETE FROM subscriptions WHERE id = $1 RETURNING id', [req.params.id]);
@@ -279,6 +325,38 @@ router.delete('/subscriptions/:id', async (req, res) => {
   } catch (err) {
     console.error('Admin delete subscription error:', err);
     res.status(500).json({ message: 'Erro ao excluir mensalidade' });
+  }
+});
+
+// Generate monthly subscriptions for all recurring users
+router.post('/subscriptions/generate', async (req, res) => {
+  try {
+    const users = await pool.query(
+      `SELECT id, plan_amount, due_day FROM users WHERE client_type = 'recurring' AND plan_amount IS NOT NULL AND due_day IS NOT NULL AND is_blocked = false`
+    );
+    let created = 0;
+    const now = new Date();
+    for (const u of users.rows) {
+      const dueDate = new Date(now.getFullYear(), now.getMonth(), u.due_day);
+      if (dueDate < now) dueDate.setMonth(dueDate.getMonth() + 1);
+      const dueDateStr = dueDate.toISOString().split('T')[0];
+      // Check if subscription already exists for this month
+      const existing = await pool.query(
+        `SELECT id FROM subscriptions WHERE user_id = $1 AND due_date = $2`,
+        [u.id, dueDateStr]
+      );
+      if (existing.rows.length === 0) {
+        await pool.query(
+          `INSERT INTO subscriptions (user_id, amount, due_date, status) VALUES ($1, $2, $3, 'pending')`,
+          [u.id, u.plan_amount, dueDateStr]
+        );
+        created++;
+      }
+    }
+    res.json({ success: true, message: `${created} cobranças geradas para ${users.rows.length} clientes recorrentes` });
+  } catch (err) {
+    console.error('Admin generate subscriptions error:', err);
+    res.status(500).json({ message: 'Erro ao gerar cobranças' });
   }
 });
 
