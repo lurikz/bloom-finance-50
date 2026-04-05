@@ -102,6 +102,9 @@ router.get('/users', async (req, res) => {
       email: r.email,
       is_blocked: r.is_blocked,
       created_at: r.created_at,
+      client_type: r.client_type || 'recurring',
+      plan_amount: r.plan_amount ? parseFloat(r.plan_amount) : null,
+      due_day: r.due_day,
       latest_subscription: r.sub_id ? {
         id: r.sub_id,
         amount: parseFloat(r.sub_amount),

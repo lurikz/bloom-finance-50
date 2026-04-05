@@ -67,6 +67,11 @@ async function ensureDatabaseInitialized() {
       -- Add is_blocked column if not exists
       ALTER TABLE users ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN DEFAULT false;
 
+      -- Client type columns
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS client_type VARCHAR(20) DEFAULT 'recurring' CHECK (client_type IN ('recurring', 'lifetime'));
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_amount DECIMAL(12,2);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS due_day INTEGER CHECK (due_day >= 1 AND due_day <= 31);
+
       -- Subscriptions table
       CREATE TABLE IF NOT EXISTS subscriptions (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
