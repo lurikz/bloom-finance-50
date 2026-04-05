@@ -17,6 +17,7 @@ const transactionRoutes = require('./routes/transactions');
 const categoryRoutes = require('./routes/categories');
 const dashboardRoutes = require('./routes/dashboard');
 const reportRoutes = require('./routes/reports');
+const { ensureDatabaseInitialized } = require('./db/init');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -68,7 +69,10 @@ app.get('/api/health', async (req, res) => {
     await pool.query('SELECT 1');
     res.json({ status: 'ok', db: 'connected' });
   } catch (err) {
-    res.status(500).json({ status: 'error', db: 'disconnected', error: err.message });
+    if (process.env.NODE_ENV !== 'production') {
+      return res.status(500).json({ status: 'error', db: 'disconnected', error: err.message });
+    }
+    res.status(500).json({ status: 'error', db: 'disconnected' });
   }
 });
 
@@ -78,6 +82,16 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Erro interno do servidor' });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+async function startServer() {
+  try {
+    await ensureDatabaseInitialized();
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  } catch (err) {
+    console.error('❌ Failed to initialize database schema:', err);
+    process.exit(1);
+  }
+}
+
+startServer();

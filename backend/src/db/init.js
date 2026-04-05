@@ -1,7 +1,13 @@
 require('dotenv').config();
 const { pool } = require('./connection');
 
-async function init() {
+const defaults = [
+  ['Salário', 'income'], ['Freelance', 'income'], ['Investimentos', 'income'], ['Outros', 'income'],
+  ['Alimentação', 'expense'], ['Transporte', 'expense'], ['Moradia', 'expense'], ['Saúde', 'expense'],
+  ['Educação', 'expense'], ['Lazer', 'expense'], ['Vestuário', 'expense'], ['Outros', 'expense'],
+];
+
+async function ensureDatabaseInitialized() {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -42,13 +48,6 @@ async function init() {
       CREATE INDEX IF NOT EXISTS idx_categories_user ON categories(user_id);
     `);
 
-    // Default categories
-    const defaults = [
-      ['Salário', 'income'], ['Freelance', 'income'], ['Investimentos', 'income'], ['Outros', 'income'],
-      ['Alimentação', 'expense'], ['Transporte', 'expense'], ['Moradia', 'expense'], ['Saúde', 'expense'],
-      ['Educação', 'expense'], ['Lazer', 'expense'], ['Vestuário', 'expense'], ['Outros', 'expense'],
-    ];
-
     for (const [name, type] of defaults) {
       await client.query(
         `INSERT INTO categories (name, type, user_id, is_default) VALUES ($1, $2, NULL, TRUE) ON CONFLICT DO NOTHING`,
@@ -57,15 +56,30 @@ async function init() {
     }
 
     await client.query('COMMIT');
-    console.log('Database initialized successfully!');
+    console.log('Database schema is ready');
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('Error initializing database:', err);
     throw err;
   } finally {
     client.release();
+  }
+}
+
+async function init() {
+  try {
+    await ensureDatabaseInitialized();
+    console.log('Database initialized successfully!');
+  } finally {
     await pool.end();
   }
 }
 
-init();
+if (require.main === module) {
+  init().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}
+
+module.exports = { ensureDatabaseInitialized };
