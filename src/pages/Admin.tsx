@@ -210,11 +210,10 @@ export default function Admin() {
       </div>
 
       <Tabs defaultValue="dashboard" className="space-y-4">
-        <TabsList className="grid grid-cols-5 w-full max-w-2xl">
+        <TabsList className="grid grid-cols-4 w-full max-w-2xl">
           <TabsTrigger value="dashboard" className="gap-1"><BarChart3 className="h-3.5 w-3.5" /> Dashboard</TabsTrigger>
           <TabsTrigger value="users" className="gap-1"><Users className="h-3.5 w-3.5" /> Usuários</TabsTrigger>
           <TabsTrigger value="billing" className="gap-1"><Receipt className="h-3.5 w-3.5" /> Cobranças</TabsTrigger>
-          <TabsTrigger value="subscriptions" className="gap-1"><CreditCard className="h-3.5 w-3.5" /> Mensalidades</TabsTrigger>
           <TabsTrigger value="system" className="gap-1"><Database className="h-3.5 w-3.5" /> Sistema</TabsTrigger>
         </TabsList>
 
