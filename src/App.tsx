@@ -12,6 +12,7 @@ import Categories from "./pages/Categories";
 import Reports from "./pages/Reports";
 import FixedExpenses from "./pages/FixedExpenses";
 import Admin from "./pages/Admin";
+import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -38,6 +39,7 @@ const App = () => (
               <Route path="/categories" element={<Categories />} />
               <Route path="/fixed-expenses" element={<FixedExpenses />} />
               <Route path="/reports" element={<Reports />} />
+              <Route path="/settings" element={<Settings />} />
               <Route path="/admin" element={<Admin />} />
             </Route>
             <Route path="*" element={<NotFound />} />
