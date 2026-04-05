@@ -126,4 +126,13 @@ export const api = {
 
   // Admin Dashboard
   getAdminDashboard: () => request('/admin/dashboard'),
+
+  // Profile
+  getProfile: () => request('/profile/me'),
+  updateProfileName: (name: string) =>
+    request('/profile/name', { method: 'PUT', body: JSON.stringify({ name }) }),
+  updateProfileEmail: (email: string, current_password: string) =>
+    request('/profile/email', { method: 'PUT', body: JSON.stringify({ email, current_password }) }),
+  updateProfilePassword: (current_password: string, new_password: string) =>
+    request('/profile/password', { method: 'PUT', body: JSON.stringify({ current_password, new_password }) }),
 };
