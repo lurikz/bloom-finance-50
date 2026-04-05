@@ -405,6 +405,17 @@ export default function Transactions() {
         </Card>
       )}
 
+      {/* Bulk actions bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+          <span className="text-sm font-medium text-foreground">{selectedIds.size} selecionada(s)</span>
+          <Button variant="destructive" size="sm" onClick={handleBulkDelete} className="gap-1.5">
+            <Trash2 className="h-3.5 w-3.5" /> Excluir selecionadas
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>Cancelar</Button>
+        </div>
+      )}
+
       <Card>
         <CardContent className="p-0">
           {/* Desktop table */}
@@ -412,6 +423,12 @@ export default function Transactions() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={transactions.length > 0 && selectedIds.size === transactions.length}
+                      onCheckedChange={toggleAll}
+                    />
+                  </TableHead>
                   <TableHead>Data</TableHead>
                   <TableHead>Descrição</TableHead>
                   <TableHead>Categoria</TableHead>
@@ -422,12 +439,18 @@ export default function Transactions() {
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
                 ) : transactions.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhuma transação</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Nenhuma transação</TableCell></TableRow>
                 ) : (
                   transactions.map((t) => (
-                    <TableRow key={t.id}>
+                    <TableRow key={t.id} data-state={selectedIds.has(t.id) ? 'selected' : undefined}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedIds.has(t.id)}
+                          onCheckedChange={() => toggleSelect(t.id)}
+                        />
+                      </TableCell>
                       <TableCell className="text-sm">{new Date(t.date).toLocaleDateString('pt-BR')}</TableCell>
                       <TableCell className="font-medium">{t.description}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{t.category_name}</TableCell>
