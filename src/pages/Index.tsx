@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Progress } from '@/components/ui/progress';
 import { TrendingUp, TrendingDown, Wallet, ArrowUpRight, ArrowDownRight, PiggyBank } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
@@ -13,20 +16,23 @@ function formatCurrency(v: number) {
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [year, setYear] = useState(now.getFullYear());
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [savingsSummary, setSavingsSummary] = useState<{ totalSaved: number; count: number } | null>(null);
+  const [savingsList, setSavingsList] = useState<any[]>([]);
 
   useEffect(() => {
     setLoading(true);
     Promise.all([
       api.getDashboard({ month, year }),
       api.getSavingsSummary().catch(() => null),
+      api.getSavings().catch(() => []),
     ])
-      .then(([d, s]) => { setData(d); setSavingsSummary(s); })
+      .then(([d, s, sl]) => { setData(d); setSavingsSummary(s); setSavingsList(sl); })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [month, year]);
@@ -148,6 +154,42 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Savings List */}
+      {savingsList.length > 0 && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2">
+              <PiggyBank className="h-4 w-4 text-primary" /> Minhas Economias
+            </CardTitle>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/savings')}>Ver todas</Button>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {savingsList.slice(0, 4).map((s: any) => {
+                const progress = s.target_amount ? Math.min((s.current_amount / s.target_amount) * 100, 100) : null;
+                return (
+                  <div key={s.id} className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium text-foreground">{s.name}</p>
+                      <p className="text-sm font-semibold text-[hsl(var(--income))]">{formatCurrency(s.current_amount)}</p>
+                    </div>
+                    {progress !== null && (
+                      <div className="flex items-center gap-2">
+                        <Progress value={progress} className="h-1.5 flex-1" />
+                        <span className="text-xs text-muted-foreground w-10 text-right">{progress.toFixed(0)}%</span>
+                      </div>
+                    )}
+                    {s.target_amount && (
+                      <p className="text-xs text-muted-foreground">Meta: {formatCurrency(s.target_amount)}</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Recent transactions */}
       <Card>

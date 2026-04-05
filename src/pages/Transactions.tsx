@@ -18,6 +18,7 @@ function formatCurrency(v: number) {
 
 interface Transaction { id: string; description: string; amount: number; type: 'income' | 'expense'; category_id: string; category_name: string; date: string; }
 interface Category { id: string; name: string; type: string; }
+interface Saving { id: string; name: string; current_amount: number; target_amount: number | null; }
 
 export default function Transactions() {
   const now = new Date();
@@ -25,6 +26,7 @@ export default function Transactions() {
   const [year, setYear] = useState(now.getFullYear());
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [savings, setSavings] = useState<Saving[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Transaction | null>(null);
@@ -33,11 +35,13 @@ export default function Transactions() {
   const [form, setForm] = useState({ description: '', amount: '', type: 'expense' as 'income' | 'expense', category_id: '', date: new Date().toISOString().split('T')[0] });
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurrenceMonths, setRecurrenceMonths] = useState('12');
+  const [addToSaving, setAddToSaving] = useState(false);
+  const [selectedSavingId, setSelectedSavingId] = useState('');
 
   const load = () => {
     setLoading(true);
-    Promise.all([api.getTransactions({ month, year }), api.getCategories()])
-      .then(([t, c]) => { setTransactions(t); setCategories(c); })
+    Promise.all([api.getTransactions({ month, year }), api.getCategories(), api.getSavings().catch(() => [])])
+      .then(([t, c, s]) => { setTransactions(t); setCategories(c); setSavings(s); })
       .catch(() => {})
       .finally(() => setLoading(false));
   };
@@ -51,6 +55,8 @@ export default function Transactions() {
     setForm({ description: '', amount: '', type: 'expense', category_id: '', date: new Date().toISOString().split('T')[0] });
     setIsRecurring(false);
     setRecurrenceMonths('12');
+    setAddToSaving(false);
+    setSelectedSavingId('');
     setDialogOpen(true);
   };
 
@@ -93,6 +99,10 @@ export default function Transactions() {
         toast({ title: 'Gasto fixo e transações recorrentes criados!' });
       } else {
         await api.createTransaction({ ...form, amount, description: form.description.trim() });
+        // If adding to a saving, deposit the amount
+        if (addToSaving && selectedSavingId && form.type === 'expense') {
+          await api.depositSaving(selectedSavingId, { amount, description: `Depósito via transação: ${form.description.trim()}` });
+        }
         toast({ title: 'Transação criada!' });
       }
       setDialogOpen(false);
@@ -175,7 +185,7 @@ export default function Transactions() {
                         type="checkbox"
                         id="recurring"
                         checked={isRecurring}
-                        onChange={(e) => setIsRecurring(e.target.checked)}
+                        onChange={(e) => { setIsRecurring(e.target.checked); if (e.target.checked) setAddToSaving(false); }}
                         className="h-4 w-4 rounded border-border"
                       />
                       <Label htmlFor="recurring" className="cursor-pointer text-sm">Esta transação é recorrente?</Label>
@@ -184,6 +194,35 @@ export default function Transactions() {
                       <div className="space-y-2">
                         <Label>Por quantos meses?</Label>
                         <Input type="number" min="1" max="120" value={recurrenceMonths} onChange={(e) => setRecurrenceMonths(e.target.value)} />
+                      </div>
+                    )}
+                  </div>
+                )}
+                {!editing && form.type === 'expense' && !isRecurring && savings.length > 0 && (
+                  <div className="space-y-3 rounded-lg border border-border p-3">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="addToSaving"
+                        checked={addToSaving}
+                        onChange={(e) => { setAddToSaving(e.target.checked); if (!e.target.checked) setSelectedSavingId(''); }}
+                        className="h-4 w-4 rounded border-border"
+                      />
+                      <Label htmlFor="addToSaving" className="cursor-pointer text-sm">Adicionar a uma economia?</Label>
+                    </div>
+                    {addToSaving && (
+                      <div className="space-y-2">
+                        <Label>Economia</Label>
+                        <Select value={selectedSavingId} onValueChange={setSelectedSavingId}>
+                          <SelectTrigger><SelectValue placeholder="Selecione a economia" /></SelectTrigger>
+                          <SelectContent>
+                            {savings.map(s => (
+                              <SelectItem key={s.id} value={s.id}>
+                                {s.name} ({formatCurrency(s.current_amount)})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     )}
                   </div>
