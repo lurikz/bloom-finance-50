@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import GradientColorPicker from '@/components/GradientColorPicker';
 import { Plus, Trash2, TrendingUp, TrendingDown, Pencil } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -16,101 +17,6 @@ interface Category {
   color?: string;
 }
 
-const GradientColorPicker = ({ value, onChange }: { value: string; onChange: (c: string) => void }) => {
-  const [isDragging, setIsDragging] = useState(false);
-
-  const handleGradientClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = e.currentTarget;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const pixel = ctx.getImageData(x * (canvas.width / rect.width), y * (canvas.height / rect.height), 1, 1).data;
-    const hex = `#${pixel[0].toString(16).padStart(2, '0')}${pixel[1].toString(16).padStart(2, '0')}${pixel[2].toString(16).padStart(2, '0')}`;
-    onChange(hex.toUpperCase());
-  }, [onChange]);
-
-  const handleMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (isDragging) handleGradientClick(e);
-  }, [isDragging, handleGradientClick]);
-
-  const drawGradient = useCallback((canvas: HTMLCanvasElement | null) => {
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    const w = canvas.width;
-    const h = canvas.height;
-
-    // Horizontal hue gradient
-    const hueGrad = ctx.createLinearGradient(0, 0, w, 0);
-    hueGrad.addColorStop(0, '#FF0000');
-    hueGrad.addColorStop(0.17, '#FF00FF');
-    hueGrad.addColorStop(0.33, '#0000FF');
-    hueGrad.addColorStop(0.5, '#00FFFF');
-    hueGrad.addColorStop(0.67, '#00FF00');
-    hueGrad.addColorStop(0.83, '#FFFF00');
-    hueGrad.addColorStop(1, '#FF0000');
-    ctx.fillStyle = hueGrad;
-    ctx.fillRect(0, 0, w, h);
-
-    // Vertical white-to-transparent gradient
-    const whiteGrad = ctx.createLinearGradient(0, 0, 0, h / 2);
-    whiteGrad.addColorStop(0, 'rgba(255,255,255,1)');
-    whiteGrad.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = whiteGrad;
-    ctx.fillRect(0, 0, w, h / 2);
-
-    // Vertical transparent-to-black gradient
-    const blackGrad = ctx.createLinearGradient(0, h / 2, 0, h);
-    blackGrad.addColorStop(0, 'rgba(0,0,0,0)');
-    blackGrad.addColorStop(1, 'rgba(0,0,0,1)');
-    ctx.fillStyle = blackGrad;
-    ctx.fillRect(0, h / 2, w, h / 2);
-  }, []);
-
-  return (
-    <div className="space-y-3">
-      <Label>Cor</Label>
-      <div className="relative rounded-lg overflow-hidden border border-border cursor-crosshair">
-        <canvas
-          ref={drawGradient}
-          width={300}
-          height={150}
-          className="w-full h-[120px]"
-          onClick={(e) => { e.stopPropagation(); handleGradientClick(e); }}
-          onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); setIsDragging(true); }}
-          onMouseUp={(e) => { e.stopPropagation(); setIsDragging(false); }}
-          onMouseLeave={() => setIsDragging(false)}
-          onMouseMove={(e) => { e.stopPropagation(); handleMove(e); }}
-          onPointerDown={(e) => { e.stopPropagation(); }}
-        />
-      </div>
-      <div className="flex items-center gap-3">
-        <div
-          className="w-10 h-10 rounded-lg border border-border flex-shrink-0 shadow-inner"
-          style={{ backgroundColor: value }}
-        />
-        <Input
-          value={value}
-          onChange={(e) => {
-            const v = e.target.value;
-            if (/^#[0-9A-Fa-f]{0,6}$/.test(v)) onChange(v);
-          }}
-          maxLength={7}
-          className="w-28 font-mono text-sm"
-          placeholder="#000000"
-        />
-        <input
-          type="color"
-          value={value}
-          onChange={(e) => onChange(e.target.value.toUpperCase())}
-          className="w-8 h-8 rounded cursor-pointer border-0 p-0 bg-transparent"
-        />
-      </div>
-    </div>
-  );
-};
 
 export default function Categories() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -137,6 +43,10 @@ export default function Categories() {
       toast({ title: 'Informe o nome', variant: 'destructive' });
       return;
     }
+    if (!/^#[0-9A-F]{6}$/i.test(color)) {
+      toast({ title: 'Escolha uma cor válida', variant: 'destructive' });
+      return;
+    }
     try {
       await api.createCategory({ name: name.trim(), type, color });
       toast({ title: 'Categoria criada!' });
@@ -152,6 +62,10 @@ export default function Categories() {
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editDialog) return;
+    if (!/^#[0-9A-F]{6}$/i.test(editColor)) {
+      toast({ title: 'Escolha uma cor válida', variant: 'destructive' });
+      return;
+    }
     try {
       await api.updateCategory(editDialog.id, { name: editName.trim() || undefined, color: editColor });
       toast({ title: 'Categoria atualizada!' });
@@ -240,7 +154,7 @@ export default function Categories() {
               <Label>Nome</Label>
               <Input maxLength={50} value={editName} onChange={(e) => setEditName(e.target.value)} />
             </div>
-            <GradientColorPicker value={editColor} onChange={setEditColor} />
+             <GradientColorPicker value={editColor} onChange={setEditColor} />
             <Button type="submit" className="w-full">Salvar</Button>
           </form>
         </DialogContent>
