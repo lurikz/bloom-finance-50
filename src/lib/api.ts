@@ -1,4 +1,20 @@
-const API_URL = import.meta.env.VITE_API_URL || 'https://evolution-bloom-backend.exf0ty.easypanel.host/api';
+const PUBLIC_API_URL = 'https://evolution-bloom-backend.exf0ty.easypanel.host/api';
+const LOCAL_API_URL = 'http://localhost:3001/api';
+
+const configuredApiUrl = import.meta.env.VITE_API_URL?.trim();
+const frontendHostname = typeof window !== 'undefined' ? window.location.hostname : '';
+const isLocalFrontend = frontendHostname === 'localhost' || frontendHostname === '127.0.0.1';
+const isLocalConfiguredApi = configuredApiUrl
+  ? /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/.test(configuredApiUrl)
+  : false;
+
+const API_URL = configuredApiUrl
+  ? isLocalConfiguredApi && !isLocalFrontend
+    ? PUBLIC_API_URL
+    : configuredApiUrl
+  : isLocalFrontend
+    ? LOCAL_API_URL
+    : PUBLIC_API_URL;
 
 async function request(endpoint: string, options: RequestInit = {}) {
   const token = localStorage.getItem('token');
