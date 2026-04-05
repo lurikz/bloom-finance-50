@@ -46,7 +46,7 @@ router.post('/', [
   }
 });
 
-// Update (user-owned OR default categories - defaults can have name/color edited)
+// Update
 router.put('/:id', [
   body('name').optional().trim().notEmpty().withMessage('Nome é obrigatório').isLength({ max: 50 }),
   body('color').optional().matches(/^#[0-9A-Fa-f]{6}$/).withMessage('Cor inválida'),
@@ -59,13 +59,12 @@ router.put('/:id', [
     if (name !== undefined) { fields.push(`name = $${idx++}`); values.push(name); }
     if (color !== undefined) { fields.push(`color = $${idx++}`); values.push(color); }
     if (fields.length === 0) return res.status(400).json({ message: 'Nada para atualizar' });
-    values.push(req.params.id);
-    // Allow editing both user-owned and default categories
+    values.push(req.params.id, req.userId);
     const result = await pool.query(
-      `UPDATE categories SET ${fields.join(', ')} WHERE id = $${idx++} AND (user_id = $${idx} OR is_default = TRUE) RETURNING *`,
-      [...values, req.userId]
+      `UPDATE categories SET ${fields.join(', ')} WHERE id = $${idx++} AND user_id = $${idx} AND is_default = FALSE RETURNING *`,
+      values
     );
-    if (result.rows.length === 0) return res.status(404).json({ message: 'Categoria não encontrada' });
+    if (result.rows.length === 0) return res.status(404).json({ message: 'Categoria não encontrada ou é padrão' });
     res.json(result.rows[0]);
   } catch (err) {
     console.error(err);
