@@ -49,6 +49,8 @@ export default function Transactions() {
   const openCreate = () => {
     setEditing(null);
     setForm({ description: '', amount: '', type: 'expense', category_id: '', date: new Date().toISOString().split('T')[0] });
+    setIsRecurring(false);
+    setRecurrenceMonths('12');
     setDialogOpen(true);
   };
 
