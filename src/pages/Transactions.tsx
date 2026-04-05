@@ -18,6 +18,7 @@ function formatCurrency(v: number) {
 
 interface Transaction { id: string; description: string; amount: number; type: 'income' | 'expense'; category_id: string; category_name: string; date: string; }
 interface Category { id: string; name: string; type: string; }
+interface Saving { id: string; name: string; current_amount: number; target_amount: number | null; }
 
 export default function Transactions() {
   const now = new Date();
