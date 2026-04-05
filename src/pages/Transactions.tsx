@@ -242,7 +242,8 @@ export default function Transactions() {
 
       <Card>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
+          {/* Desktop table */}
+          <div className="hidden md:block overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -285,6 +286,38 @@ export default function Transactions() {
                 )}
               </TableBody>
             </Table>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="md:hidden">
+            {loading ? (
+              <p className="text-center py-8 text-muted-foreground">Carregando...</p>
+            ) : transactions.length === 0 ? (
+              <p className="text-center py-8 text-muted-foreground">Nenhuma transação</p>
+            ) : (
+              <div className="divide-y divide-border">
+                {transactions.map((t) => (
+                  <div key={t.id} className="p-4 flex items-center gap-3">
+                    <div className={`shrink-0 flex items-center justify-center h-10 w-10 rounded-full ${t.type === 'income' ? 'bg-accent' : 'bg-destructive/10'}`}>
+                      {t.type === 'income' ? <TrendingUp className="h-4 w-4 text-accent-foreground" /> : <TrendingDown className="h-4 w-4 text-destructive" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{t.description}</p>
+                      <p className="text-xs text-muted-foreground">{t.category_name} · {new Date(t.date).toLocaleDateString('pt-BR')}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className={`text-sm font-semibold ${t.type === 'income' ? 'text-[hsl(var(--income))]' : 'text-[hsl(var(--expense))]'}`}>
+                        {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}
+                      </p>
+                      <div className="flex justify-end gap-0.5 mt-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(t)}><Pencil className="h-3.5 w-3.5" /></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(t.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

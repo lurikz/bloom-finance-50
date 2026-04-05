@@ -139,21 +139,21 @@ export default function Reports() {
           <FileText className="h-6 w-6 text-primary" />
           <h1 className="text-2xl font-bold text-foreground">Relatório Mensal</h1>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Select value={String(month)} onValueChange={(v) => setMonth(Number(v))}>
-            <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-[130px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               {MONTHS.map((m, i) => <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
-            <SelectTrigger className="w-[100px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-[90px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               {[2024, 2025, 2026].map((y) => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Button variant="outline" className="gap-2" onClick={downloadPDF} disabled={!summary || loading}>
-            <Download className="h-4 w-4" /> PDF
+          <Button variant="outline" size="icon" onClick={downloadPDF} disabled={!summary || loading}>
+            <Download className="h-4 w-4" />
           </Button>
         </div>
       </div>
@@ -298,26 +298,42 @@ export default function Reports() {
                 <CardTitle className="text-base">Maiores Gastos do Mês</CardTitle>
               </CardHeader>
               <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Descrição</TableHead>
-                      <TableHead>Categoria</TableHead>
-                      <TableHead>Data</TableHead>
-                      <TableHead className="text-right">Valor</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {data.topExpenses.map((t: any, i: number) => (
-                      <TableRow key={i}>
-                        <TableCell className="font-medium">{t.description}</TableCell>
-                        <TableCell className="text-muted-foreground">{t.category}</TableCell>
-                        <TableCell className="text-muted-foreground">{new Date(t.date).toLocaleDateString('pt-BR')}</TableCell>
-                        <TableCell className="text-right font-semibold text-[hsl(var(--expense))]">{formatCurrency(t.amount)}</TableCell>
+                {/* Desktop table */}
+                <div className="hidden md:block">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Descrição</TableHead>
+                        <TableHead>Categoria</TableHead>
+                        <TableHead>Data</TableHead>
+                        <TableHead className="text-right">Valor</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {data.topExpenses.map((t: any, i: number) => (
+                        <TableRow key={i}>
+                          <TableCell className="font-medium">{t.description}</TableCell>
+                          <TableCell className="text-muted-foreground">{t.category}</TableCell>
+                          <TableCell className="text-muted-foreground">{new Date(t.date).toLocaleDateString('pt-BR')}</TableCell>
+                          <TableCell className="text-right font-semibold text-[hsl(var(--expense))]">{formatCurrency(t.amount)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Mobile cards */}
+                <div className="md:hidden divide-y divide-border">
+                  {data.topExpenses.map((t: any, i: number) => (
+                    <div key={i} className="p-4 flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{t.description}</p>
+                        <p className="text-xs text-muted-foreground">{t.category} · {new Date(t.date).toLocaleDateString('pt-BR')}</p>
+                      </div>
+                      <p className="text-sm font-semibold text-[hsl(var(--expense))] shrink-0">{formatCurrency(t.amount)}</p>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           )}
