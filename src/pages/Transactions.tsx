@@ -77,6 +77,20 @@ export default function Transactions() {
       if (editing) {
         await api.updateTransaction(editing.id, { ...form, amount, description: form.description.trim() });
         toast({ title: 'Transação atualizada!' });
+      } else if (isRecurring && form.type === 'expense') {
+        const months = parseInt(recurrenceMonths);
+        if (isNaN(months) || months < 1) {
+          toast({ title: 'Meses de recorrência inválido', variant: 'destructive' });
+          return;
+        }
+        await api.createFixedExpense({
+          description: form.description.trim(),
+          amount,
+          category_id: form.category_id,
+          start_date: form.date,
+          recurrence_months: months,
+        });
+        toast({ title: 'Gasto fixo e transações recorrentes criados!' });
       } else {
         await api.createTransaction({ ...form, amount, description: form.description.trim() });
         toast({ title: 'Transação criada!' });
