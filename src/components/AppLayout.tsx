@@ -65,9 +65,12 @@ export function AppLayout() {
             <Wallet className="h-6 w-6 text-primary" />
             <span className="text-lg font-bold">FinControl</span>
           </div>
-          <Button variant="ghost" size="icon" onClick={() => setMenuOpen(!menuOpen)}>
-            {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </Button>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <Button variant="ghost" size="icon" onClick={() => setMenuOpen(!menuOpen)}>
+              {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+          </div>
         </header>
 
         {menuOpen && (
