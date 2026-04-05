@@ -95,8 +95,6 @@ export default function Admin() {
   const [dash, setDash] = useState<AdminDashData | null>(null);
   const [dashLoading, setDashLoading] = useState(false);
 
-  if (!isAdmin) return <Navigate to="/" replace />;
-
   const loadDbStatus = async () => {
     setDbLoading(true);
     setDbError(null);
@@ -118,9 +116,11 @@ export default function Admin() {
     try { setDash(await api.getAdminDashboard()); } catch { } finally { setDashLoading(false); }
   };
 
-  useEffect(() => { loadDbStatus(); loadUsers(); loadSubs(); loadDash(); }, []);
-  useEffect(() => { loadUsers(); }, [userFilter]);
-  useEffect(() => { loadSubs(); }, [subFilter]);
+  useEffect(() => { if (isAdmin) { loadDbStatus(); loadUsers(); loadSubs(); loadDash(); } }, [isAdmin]);
+  useEffect(() => { if (isAdmin) loadUsers(); }, [userFilter, isAdmin]);
+  useEffect(() => { if (isAdmin) loadSubs(); }, [subFilter, isAdmin]);
+
+  if (!isAdmin) return <Navigate to="/" replace />;
 
   const handleInitDb = async () => {
     setInitializing(true);
