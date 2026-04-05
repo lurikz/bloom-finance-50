@@ -92,10 +92,10 @@ export default function Admin() {
           ) : (
             <div className="space-y-4">
               <div className="flex items-center gap-2">
-                {isFullyReady ? (
+              {isFullyReady ? (
                   <>
-                    <CheckCircle className="h-5 w-5 text-[hsl(var(--income))]" />
-                    <span className="font-medium text-[hsl(var(--income))]">Backend totalmente configurado</span>
+                    <CheckCircle className="h-5 w-5 text-primary" />
+                    <span className="font-medium text-primary">Backend totalmente configurado</span>
                   </>
                 ) : (
                   <>
