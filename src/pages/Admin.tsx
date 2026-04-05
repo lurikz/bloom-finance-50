@@ -161,7 +161,7 @@ export default function Admin() {
             )}
           </Button>
           {isFullyReady && !initializing && (
-            <p className="text-sm text-[hsl(var(--income))]">
+            <p className="text-sm text-primary">
               ✅ Tudo pronto! O backend está configurado e funcionando.
             </p>
           )}
