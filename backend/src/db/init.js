@@ -1,7 +1,14 @@
 require('dotenv').config();
 const { pool } = require('./connection');
 
-const DEFAULT_CATEGORIES = [];
+const DEFAULT_CATEGORIES = [
+  ['Salário', 'income', '#10B981'],
+  ['Transporte', 'expense', '#8B5CF6'],
+  ['Moradia', 'expense', '#3B82F6'],
+  ['Água', 'expense', '#06B6D4'],
+  ['Luz', 'expense', '#F59E0B'],
+  ['Lazer', 'expense', '#EC4899'],
+];
 
 async function ensureDatabaseInitialized() {
   const client = await pool.connect();
