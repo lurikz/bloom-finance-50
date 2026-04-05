@@ -15,7 +15,7 @@ const validate = (req, res, next) => {
 // List
 router.get('/', async (req, res) => {
   try {
-    const { month, year, type, category } = req.query;
+    const { month, year, type, category, search, min_amount, max_amount, date_from, date_to } = req.query;
     let query = `
       SELECT t.*, c.name as category_name 
       FROM transactions t 
@@ -25,7 +25,8 @@ router.get('/', async (req, res) => {
     const params = [req.userId];
     let idx = 2;
 
-    if (month && year) {
+    // Month/year filter (ignored if custom date range is provided)
+    if (!date_from && !date_to && month && year) {
       query += ` AND EXTRACT(MONTH FROM t.date) = $${idx} AND EXTRACT(YEAR FROM t.date) = $${idx + 1}`;
       params.push(Number(month), Number(year));
       idx += 2;
@@ -38,6 +39,31 @@ router.get('/', async (req, res) => {
     if (category) {
       query += ` AND t.category_id = $${idx}`;
       params.push(category);
+      idx++;
+    }
+    if (search && typeof search === 'string' && search.trim()) {
+      query += ` AND t.description ILIKE $${idx}`;
+      params.push(`%${search.trim()}%`);
+      idx++;
+    }
+    if (min_amount && !isNaN(Number(min_amount))) {
+      query += ` AND t.amount >= $${idx}`;
+      params.push(Number(min_amount));
+      idx++;
+    }
+    if (max_amount && !isNaN(Number(max_amount))) {
+      query += ` AND t.amount <= $${idx}`;
+      params.push(Number(max_amount));
+      idx++;
+    }
+    if (date_from) {
+      query += ` AND t.date >= $${idx}`;
+      params.push(date_from);
+      idx++;
+    }
+    if (date_to) {
+      query += ` AND t.date <= $${idx}`;
+      params.push(date_to);
       idx++;
     }
 
