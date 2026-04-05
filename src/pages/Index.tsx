@@ -84,6 +84,18 @@ export default function Dashboard() {
             <p className="text-2xl font-bold text-[hsl(var(--expense))]">{loading ? '...' : formatCurrency(data?.totalExpense || 0)}</p>
           </CardContent>
         </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Guardado</CardTitle>
+            <PiggyBank className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold text-primary">{loading ? '...' : formatCurrency(savingsSummary?.totalSaved || 0)}</p>
+            {savingsSummary && savingsSummary.count > 0 && (
+              <p className="text-xs text-muted-foreground mt-1">{savingsSummary.count} economia{savingsSummary.count > 1 ? 's' : ''}</p>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Charts */}
