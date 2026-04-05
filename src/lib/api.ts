@@ -62,4 +62,12 @@ export const api = {
     if (params?.year) query.set('year', String(params.year));
     return request(`/dashboard?${query.toString()}`);
   },
+
+  // Reports
+  getMonthlyReport: (params?: { month?: number; year?: number }) => {
+    const query = new URLSearchParams();
+    if (params?.month) query.set('month', String(params.month));
+    if (params?.year) query.set('year', String(params.year));
+    return request(`/reports/monthly?${query.toString()}`);
+  },
 };
