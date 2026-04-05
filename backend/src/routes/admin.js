@@ -120,17 +120,35 @@ router.post('/users', [
   body('name').trim().notEmpty().withMessage('Nome é obrigatório').isLength({ max: 100 }),
   body('email').trim().isEmail().withMessage('Email inválido').normalizeEmail(),
   body('password').isLength({ min: 6 }).withMessage('Senha deve ter no mínimo 6 caracteres'),
+  body('client_type').optional().isIn(['recurring', 'lifetime']),
+  body('plan_amount').optional().isFloat({ min: 0.01 }),
+  body('due_day').optional().isInt({ min: 1, max: 31 }),
 ], validate, async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, client_type = 'recurring', plan_amount, due_day } = req.body;
     const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
     if (existing.rows.length > 0) return res.status(400).json({ message: 'Email já cadastrado' });
     const hash = await bcrypt.hash(password, 12);
     const result = await pool.query(
-      'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id, name, email, is_blocked, created_at',
-      [name, email, hash]
+      `INSERT INTO users (name, email, password_hash, client_type, plan_amount, due_day) 
+       VALUES ($1, $2, $3, $4, $5, $6) 
+       RETURNING id, name, email, is_blocked, created_at, client_type, plan_amount, due_day`,
+      [name, email, hash, client_type, plan_amount || null, due_day || null]
     );
-    res.status(201).json(result.rows[0]);
+    const user = result.rows[0];
+
+    // Auto-generate first subscription for recurring clients
+    if (client_type === 'recurring' && plan_amount && due_day) {
+      const now = new Date();
+      const dueDate = new Date(now.getFullYear(), now.getMonth(), due_day);
+      if (dueDate < now) dueDate.setMonth(dueDate.getMonth() + 1);
+      await pool.query(
+        `INSERT INTO subscriptions (user_id, amount, due_date, status) VALUES ($1, $2, $3, 'pending')`,
+        [user.id, plan_amount, dueDate.toISOString().split('T')[0]]
+      );
+    }
+
+    res.status(201).json(user);
   } catch (err) {
     console.error('Admin create user error:', err);
     res.status(500).json({ message: 'Erro ao criar usuário' });
