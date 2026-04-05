@@ -36,11 +36,14 @@ router.post('/register', [
     res.status(201).json({ user, token });
   } catch (err) {
     console.error('Register error:', err);
-    const detail = err.code === 'ECONNREFUSED' ? 'Banco de dados não acessível'
-      : err.code === '42P01' ? 'Tabela users não existe. Execute o script init.sql'
-      : err.code === '28P01' ? 'Credenciais do banco inválidas'
-      : err.message || 'Erro desconhecido';
-    res.status(500).json({ message: 'Erro ao criar conta', detail });
+    if (process.env.NODE_ENV !== 'production') {
+      const detail = err.code === 'ECONNREFUSED' ? 'Banco de dados não acessível'
+        : err.code === '42P01' ? 'Tabela users não existe. Execute o script init.sql'
+        : err.code === '28P01' ? 'Credenciais do banco inválidas'
+        : err.message || 'Erro desconhecido';
+      return res.status(500).json({ message: 'Erro ao criar conta', detail });
+    }
+    res.status(500).json({ message: 'Erro ao criar conta' });
   }
 });
 
