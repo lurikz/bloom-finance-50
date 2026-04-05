@@ -42,12 +42,12 @@ router.get('/', async (req, res) => {
 
     // Category chart for expenses this month
     const categoryChart = await pool.query(
-      `SELECT c.name, COALESCE(SUM(t.amount), 0) as value
+      `SELECT c.name, c.color, COALESCE(SUM(t.amount), 0) as value
        FROM transactions t
        JOIN categories c ON t.category_id = c.id
        WHERE t.user_id = $1 AND t.type = 'expense' 
          AND EXTRACT(MONTH FROM t.date) = $2 AND EXTRACT(YEAR FROM t.date) = $3
-       GROUP BY c.name
+       GROUP BY c.name, c.color
        ORDER BY value DESC`,
       [req.userId, month, year]
     );
@@ -74,6 +74,7 @@ router.get('/', async (req, res) => {
       categoryChart: categoryChart.rows.map(r => ({
         name: r.name,
         value: parseFloat(r.value),
+        color: r.color || null,
       })),
       recentTransactions: recent.rows,
     });
