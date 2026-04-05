@@ -26,6 +26,7 @@ export default function Transactions() {
   const [year, setYear] = useState(now.getFullYear());
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [savings, setSavings] = useState<Saving[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Transaction | null>(null);
@@ -34,6 +35,8 @@ export default function Transactions() {
   const [form, setForm] = useState({ description: '', amount: '', type: 'expense' as 'income' | 'expense', category_id: '', date: new Date().toISOString().split('T')[0] });
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurrenceMonths, setRecurrenceMonths] = useState('12');
+  const [addToSaving, setAddToSaving] = useState(false);
+  const [selectedSavingId, setSelectedSavingId] = useState('');
 
   const load = () => {
     setLoading(true);
