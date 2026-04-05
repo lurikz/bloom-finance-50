@@ -91,6 +91,8 @@ export default function Admin() {
   const [subs, setSubs] = useState<Subscription[]>([]);
   const [subsLoading, setSubsLoading] = useState(false);
   const [subFilter, setSubFilter] = useState('all');
+  const [subMonth, setSubMonth] = useState('');
+  const [subYear, setSubYear] = useState('');
   const [subDialog, setSubDialog] = useState(false);
   const [subForm, setSubForm] = useState({ user_id: '', amount: '', due_date: '' });
   const [generating, setGenerating] = useState(false);
