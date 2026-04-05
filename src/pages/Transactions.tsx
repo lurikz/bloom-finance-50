@@ -55,6 +55,8 @@ export default function Transactions() {
     setForm({ description: '', amount: '', type: 'expense', category_id: '', date: new Date().toISOString().split('T')[0] });
     setIsRecurring(false);
     setRecurrenceMonths('12');
+    setAddToSaving(false);
+    setSelectedSavingId('');
     setDialogOpen(true);
   };
 
