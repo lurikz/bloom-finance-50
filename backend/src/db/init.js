@@ -2,9 +2,9 @@ require('dotenv').config();
 const { pool } = require('./connection');
 
 const defaults = [
-  ['Salário', 'income'], ['Freelance', 'income'], ['Investimentos', 'income'], ['Outros', 'income'],
-  ['Alimentação', 'expense'], ['Transporte', 'expense'], ['Moradia', 'expense'], ['Saúde', 'expense'],
-  ['Educação', 'expense'], ['Lazer', 'expense'], ['Vestuário', 'expense'], ['Outros', 'expense'],
+  ['Salário', 'income'], ['Freelance', 'income'],
+  ['Alimentação', 'expense'], ['Transporte', 'expense'], ['Moradia', 'expense'],
+  ['Lazer', 'expense'], ['Saúde', 'expense'],
 ];
 
 async function ensureDatabaseInitialized() {
