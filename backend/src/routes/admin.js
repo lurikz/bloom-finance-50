@@ -299,6 +299,24 @@ router.post('/subscriptions/:id/pay', async (req, res) => {
   }
 });
 
+router.put('/subscriptions/:id/status', [
+  body('status').isIn(['pending', 'paid', 'overdue']).withMessage('Status inválido'),
+], validate, async (req, res) => {
+  try {
+    const { status } = req.body;
+    const paid_at = status === 'paid' ? 'NOW()' : 'NULL';
+    const result = await pool.query(
+      `UPDATE subscriptions SET status = $1, paid_at = ${paid_at} WHERE id = $2 RETURNING *`,
+      [status, req.params.id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ message: 'Mensalidade não encontrada' });
+    res.json({ ...result.rows[0], amount: parseFloat(result.rows[0].amount) });
+  } catch (err) {
+    console.error('Admin update subscription status error:', err);
+    res.status(500).json({ message: 'Erro ao atualizar status' });
+  }
+});
+
 router.delete('/subscriptions/:id', async (req, res) => {
   try {
     const result = await pool.query('DELETE FROM subscriptions WHERE id = $1 RETURNING id', [req.params.id]);
@@ -307,6 +325,38 @@ router.delete('/subscriptions/:id', async (req, res) => {
   } catch (err) {
     console.error('Admin delete subscription error:', err);
     res.status(500).json({ message: 'Erro ao excluir mensalidade' });
+  }
+});
+
+// Generate monthly subscriptions for all recurring users
+router.post('/subscriptions/generate', async (req, res) => {
+  try {
+    const users = await pool.query(
+      `SELECT id, plan_amount, due_day FROM users WHERE client_type = 'recurring' AND plan_amount IS NOT NULL AND due_day IS NOT NULL AND is_blocked = false`
+    );
+    let created = 0;
+    const now = new Date();
+    for (const u of users.rows) {
+      const dueDate = new Date(now.getFullYear(), now.getMonth(), u.due_day);
+      if (dueDate < now) dueDate.setMonth(dueDate.getMonth() + 1);
+      const dueDateStr = dueDate.toISOString().split('T')[0];
+      // Check if subscription already exists for this month
+      const existing = await pool.query(
+        `SELECT id FROM subscriptions WHERE user_id = $1 AND due_date = $2`,
+        [u.id, dueDateStr]
+      );
+      if (existing.rows.length === 0) {
+        await pool.query(
+          `INSERT INTO subscriptions (user_id, amount, due_date, status) VALUES ($1, $2, $3, 'pending')`,
+          [u.id, u.plan_amount, dueDateStr]
+        );
+        created++;
+      }
+    }
+    res.json({ success: true, message: `${created} cobranças geradas para ${users.rows.length} clientes recorrentes` });
+  } catch (err) {
+    console.error('Admin generate subscriptions error:', err);
+    res.status(500).json({ message: 'Erro ao gerar cobranças' });
   }
 });
 
