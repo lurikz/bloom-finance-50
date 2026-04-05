@@ -4,6 +4,7 @@ import { LayoutDashboard, ArrowLeftRight, Tags, FileText, LogOut, Menu, X, Walle
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { NotificationBell } from '@/components/NotificationBell';
 
 export function AppLayout() {
   const { user, logout, isAdmin } = useAuth();
