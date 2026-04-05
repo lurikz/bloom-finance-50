@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Plus, Trash2, Pencil, TrendingUp, TrendingDown, Search, Filter, X, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNotifications } from '@/contexts/NotificationContext';
@@ -55,7 +56,38 @@ export default function Transactions() {
   const [addToSaving, setAddToSaving] = useState(false);
   const [selectedSavingId, setSelectedSavingId] = useState('');
 
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
   const hasActiveFilters = searchTerm || filterType !== 'all' || filterCategory !== 'all' || minAmount || maxAmount || dateFrom || dateTo;
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (selectedIds.size === transactions.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(transactions.map(t => t.id)));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Excluir ${selectedIds.size} transação(ões)?`)) return;
+    try {
+      await api.bulkDeleteTransactions(Array.from(selectedIds));
+      toast({ title: `${selectedIds.size} transação(ões) excluída(s)` });
+      setSelectedIds(new Set());
+      load();
+    } catch (err: any) {
+      toast({ title: 'Erro', description: err.message, variant: 'destructive' });
+    }
+  };
 
   const load = (page = currentPage) => {
     setLoading(true);
@@ -373,6 +405,17 @@ export default function Transactions() {
         </Card>
       )}
 
+      {/* Bulk actions bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+          <span className="text-sm font-medium text-foreground">{selectedIds.size} selecionada(s)</span>
+          <Button variant="destructive" size="sm" onClick={handleBulkDelete} className="gap-1.5">
+            <Trash2 className="h-3.5 w-3.5" /> Excluir selecionadas
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>Cancelar</Button>
+        </div>
+      )}
+
       <Card>
         <CardContent className="p-0">
           {/* Desktop table */}
@@ -380,6 +423,12 @@ export default function Transactions() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={transactions.length > 0 && selectedIds.size === transactions.length}
+                      onCheckedChange={toggleAll}
+                    />
+                  </TableHead>
                   <TableHead>Data</TableHead>
                   <TableHead>Descrição</TableHead>
                   <TableHead>Categoria</TableHead>
@@ -390,12 +439,18 @@ export default function Transactions() {
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
                 ) : transactions.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhuma transação</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Nenhuma transação</TableCell></TableRow>
                 ) : (
                   transactions.map((t) => (
-                    <TableRow key={t.id}>
+                    <TableRow key={t.id} data-state={selectedIds.has(t.id) ? 'selected' : undefined}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedIds.has(t.id)}
+                          onCheckedChange={() => toggleSelect(t.id)}
+                        />
+                      </TableCell>
                       <TableCell className="text-sm">{new Date(t.date).toLocaleDateString('pt-BR')}</TableCell>
                       <TableCell className="font-medium">{t.description}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{t.category_name}</TableCell>
@@ -429,8 +484,22 @@ export default function Transactions() {
               <p className="text-center py-8 text-muted-foreground">Nenhuma transação</p>
             ) : (
               <div className="divide-y divide-border">
+                {transactions.length > 0 && (
+                  <div className="p-3 flex items-center gap-2 border-b border-border bg-muted/30">
+                    <Checkbox
+                      checked={selectedIds.size === transactions.length}
+                      onCheckedChange={toggleAll}
+                    />
+                    <span className="text-xs text-muted-foreground">Selecionar todas</span>
+                  </div>
+                )}
                 {transactions.map((t) => (
-                  <div key={t.id} className="p-4 flex items-center gap-3">
+                  <div key={t.id} className={`p-4 flex items-center gap-3 ${selectedIds.has(t.id) ? 'bg-muted/50' : ''}`}>
+                    <Checkbox
+                      checked={selectedIds.has(t.id)}
+                      onCheckedChange={() => toggleSelect(t.id)}
+                      className="shrink-0"
+                    />
                     <div className={`shrink-0 flex items-center justify-center h-10 w-10 rounded-full ${t.type === 'income' ? 'bg-accent' : 'bg-destructive/10'}`}>
                       {t.type === 'income' ? <TrendingUp className="h-4 w-4 text-accent-foreground" /> : <TrendingDown className="h-4 w-4 text-destructive" />}
                     </div>

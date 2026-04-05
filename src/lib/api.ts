@@ -63,6 +63,8 @@ export const api = {
     request(`/transactions/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteTransaction: (id: string) =>
     request(`/transactions/${id}`, { method: 'DELETE' }),
+  bulkDeleteTransactions: (ids: string[]) =>
+    request('/transactions/bulk-delete', { method: 'POST', body: JSON.stringify({ ids }) }),
 
   // Categories
   getCategories: () => request('/categories'),
