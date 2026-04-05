@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Trash2, Pencil, TrendingUp, TrendingDown } from 'lucide-react';
+import { Plus, Trash2, Pencil, TrendingUp, TrendingDown, Search, Filter, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNotifications } from '@/contexts/NotificationContext';
 
@@ -34,21 +34,55 @@ export default function Transactions() {
   const [editing, setEditing] = useState<Transaction | null>(null);
   const { toast } = useToast();
 
+  // Advanced filters
+  const [showFilters, setShowFilters] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState('all');
+  const [filterCategory, setFilterCategory] = useState('all');
+  const [minAmount, setMinAmount] = useState('');
+  const [maxAmount, setMaxAmount] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [useCustomPeriod, setUseCustomPeriod] = useState(false);
+
   const [form, setForm] = useState({ description: '', amount: '', type: 'expense' as 'income' | 'expense', category_id: '', date: new Date().toISOString().split('T')[0] });
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurrenceMonths, setRecurrenceMonths] = useState('12');
   const [addToSaving, setAddToSaving] = useState(false);
   const [selectedSavingId, setSelectedSavingId] = useState('');
 
+  const hasActiveFilters = searchTerm || filterType !== 'all' || filterCategory !== 'all' || minAmount || maxAmount || dateFrom || dateTo;
+
   const load = () => {
     setLoading(true);
-    Promise.all([api.getTransactions({ month, year }), api.getCategories(), api.getSavings().catch(() => [])])
+    const params: any = {};
+    if (!useCustomPeriod) { params.month = month; params.year = year; }
+    if (searchTerm.trim()) params.search = searchTerm.trim();
+    if (filterType !== 'all') params.type = filterType;
+    if (filterCategory !== 'all') params.category = filterCategory;
+    if (minAmount) params.min_amount = parseFloat(minAmount);
+    if (maxAmount) params.max_amount = parseFloat(maxAmount);
+    if (dateFrom) params.date_from = dateFrom;
+    if (dateTo) params.date_to = dateTo;
+
+    Promise.all([api.getTransactions(params), api.getCategories(), api.getSavings().catch(() => [])])
       .then(([t, c, s]) => { setTransactions(t); setCategories(c); setSavings(s); })
       .catch(() => {})
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { load(); }, [month, year]);
+  const clearFilters = () => {
+    setSearchTerm('');
+    setFilterType('all');
+    setFilterCategory('all');
+    setMinAmount('');
+    setMaxAmount('');
+    setDateFrom('');
+    setDateTo('');
+    setUseCustomPeriod(false);
+  };
+
+  useEffect(() => { load(); }, [month, year, useCustomPeriod]);
 
   const filteredCats = categories.filter(c => c.type === form.type);
 
@@ -133,15 +167,25 @@ export default function Transactions() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-foreground">Transações</h1>
-        <div className="flex gap-2 flex-wrap">
-          <Select value={String(month)} onValueChange={(v) => setMonth(Number(v))}>
-            <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
-            <SelectContent>{MONTHS.map((m, i) => <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>)}</SelectContent>
-          </Select>
-          <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
-            <SelectTrigger className="w-[100px]"><SelectValue /></SelectTrigger>
-            <SelectContent>{[2024, 2025, 2026].map((y) => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
-          </Select>
+        <div className="flex gap-2 flex-wrap items-center">
+          {!useCustomPeriod && (
+            <>
+              <Select value={String(month)} onValueChange={(v) => setMonth(Number(v))}>
+                <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+                <SelectContent>{MONTHS.map((m, i) => <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>)}</SelectContent>
+              </Select>
+              <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
+                <SelectTrigger className="w-[100px]"><SelectValue /></SelectTrigger>
+                <SelectContent>{[2024, 2025, 2026].map((y) => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
+              </Select>
+            </>
+          )}
+          <Button variant={showFilters ? 'secondary' : 'outline'} size="sm" onClick={() => setShowFilters(!showFilters)} className="gap-1.5">
+            <Filter className="h-4 w-4" />
+            Filtros
+            {hasActiveFilters && <span className="ml-1 h-2 w-2 rounded-full bg-primary" />}
+            {showFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          </Button>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button onClick={openCreate} className="gap-2"><Plus className="h-4 w-4" /> Nova</Button>
@@ -187,13 +231,7 @@ export default function Transactions() {
                 {!editing && form.type === 'expense' && (
                   <div className="space-y-3 rounded-lg border border-border p-3">
                     <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="recurring"
-                        checked={isRecurring}
-                        onChange={(e) => { setIsRecurring(e.target.checked); if (e.target.checked) setAddToSaving(false); }}
-                        className="h-4 w-4 rounded border-border"
-                      />
+                      <input type="checkbox" id="recurring" checked={isRecurring} onChange={(e) => { setIsRecurring(e.target.checked); if (e.target.checked) setAddToSaving(false); }} className="h-4 w-4 rounded border-border" />
                       <Label htmlFor="recurring" className="cursor-pointer text-sm">Esta transação é recorrente?</Label>
                     </div>
                     {isRecurring && (
@@ -207,13 +245,7 @@ export default function Transactions() {
                 {!editing && form.type === 'expense' && !isRecurring && savings.length > 0 && (
                   <div className="space-y-3 rounded-lg border border-border p-3">
                     <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="addToSaving"
-                        checked={addToSaving}
-                        onChange={(e) => { setAddToSaving(e.target.checked); if (!e.target.checked) setSelectedSavingId(''); }}
-                        className="h-4 w-4 rounded border-border"
-                      />
+                      <input type="checkbox" id="addToSaving" checked={addToSaving} onChange={(e) => { setAddToSaving(e.target.checked); if (!e.target.checked) setSelectedSavingId(''); }} className="h-4 w-4 rounded border-border" />
                       <Label htmlFor="addToSaving" className="cursor-pointer text-sm">Adicionar a uma economia?</Label>
                     </div>
                     {addToSaving && (
@@ -222,11 +254,7 @@ export default function Transactions() {
                         <Select value={selectedSavingId} onValueChange={setSelectedSavingId}>
                           <SelectTrigger><SelectValue placeholder="Selecione a economia" /></SelectTrigger>
                           <SelectContent>
-                            {savings.map(s => (
-                              <SelectItem key={s.id} value={s.id}>
-                                {s.name} ({formatCurrency(s.current_amount)})
-                              </SelectItem>
-                            ))}
+                            {savings.map(s => <SelectItem key={s.id} value={s.id}>{s.name} ({formatCurrency(s.current_amount)})</SelectItem>)}
                           </SelectContent>
                         </Select>
                       </div>
@@ -239,6 +267,99 @@ export default function Transactions() {
           </Dialog>
         </div>
       </div>
+
+      {/* Advanced Filters Panel */}
+      {showFilters && (
+        <Card className="border-dashed">
+          <CardContent className="pt-4 pb-4 space-y-4">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por descrição..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+                onKeyDown={(e) => e.key === 'Enter' && load()}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {/* Type */}
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Tipo</Label>
+                <Select value={filterType} onValueChange={setFilterType}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="income">Entrada</SelectItem>
+                    <SelectItem value="expense">Saída</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Category */}
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Categoria</Label>
+                <Select value={filterCategory} onValueChange={setFilterCategory}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas</SelectItem>
+                    {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Min amount */}
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Valor mínimo</Label>
+                <Input type="number" step="0.01" min="0" placeholder="R$ 0,00" value={minAmount} onChange={(e) => setMinAmount(e.target.value)} />
+              </div>
+
+              {/* Max amount */}
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Valor máximo</Label>
+                <Input type="number" step="0.01" min="0" placeholder="R$ 99.999" value={maxAmount} onChange={(e) => setMaxAmount(e.target.value)} />
+              </div>
+            </div>
+
+            {/* Custom date range */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <input type="checkbox" id="customPeriod" checked={useCustomPeriod} onChange={(e) => setUseCustomPeriod(e.target.checked)} className="h-4 w-4 rounded border-border" />
+                <Label htmlFor="customPeriod" className="cursor-pointer text-sm">Período personalizado</Label>
+              </div>
+              {useCustomPeriod && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Data início</Label>
+                    <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Data fim</Label>
+                    <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-2 flex-wrap">
+              <Button size="sm" onClick={load} className="gap-1.5">
+                <Search className="h-3.5 w-3.5" /> Buscar
+              </Button>
+              {hasActiveFilters && (
+                <Button size="sm" variant="ghost" onClick={() => { clearFilters(); setTimeout(load, 0); }} className="gap-1.5">
+                  <X className="h-3.5 w-3.5" /> Limpar filtros
+                </Button>
+              )}
+              <span className="text-xs text-muted-foreground self-center ml-auto">
+                {transactions.length} resultado{transactions.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardContent className="p-0">

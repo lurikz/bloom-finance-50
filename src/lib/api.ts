@@ -42,12 +42,17 @@ export const api = {
     request('/auth/reset-password', { method: 'POST', body: JSON.stringify({ token, password }) }),
 
   // Transactions
-  getTransactions: (params?: { month?: number; year?: number; type?: string; category?: string }) => {
+  getTransactions: (params?: { month?: number; year?: number; type?: string; category?: string; search?: string; min_amount?: number; max_amount?: number; date_from?: string; date_to?: string }) => {
     const query = new URLSearchParams();
     if (params?.month) query.set('month', String(params.month));
     if (params?.year) query.set('year', String(params.year));
     if (params?.type) query.set('type', params.type);
     if (params?.category) query.set('category', params.category);
+    if (params?.search) query.set('search', params.search);
+    if (params?.min_amount) query.set('min_amount', String(params.min_amount));
+    if (params?.max_amount) query.set('max_amount', String(params.max_amount));
+    if (params?.date_from) query.set('date_from', params.date_from);
+    if (params?.date_to) query.set('date_to', params.date_to);
     return request(`/transactions?${query.toString()}`);
   },
   createTransaction: (data: { description: string; amount: number; type: 'income' | 'expense'; category_id: string; date: string }) =>
