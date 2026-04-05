@@ -285,6 +285,35 @@ router.post('/subscriptions', [
   }
 });
 
+// Helper: auto-generate next month's subscription for recurring clients
+async function autoGenerateNextSubscription(sub) {
+  // Check if user is recurring
+  const userResult = await pool.query(
+    `SELECT client_type, plan_amount, due_day FROM users WHERE id = $1`,
+    [sub.user_id]
+  );
+  if (userResult.rows.length === 0) return null;
+  const user = userResult.rows[0];
+  if (user.client_type !== 'recurring') return null;
+
+  const currentDue = new Date(sub.due_date);
+  const nextDue = new Date(currentDue.getFullYear(), currentDue.getMonth() + 1, currentDue.getDate());
+  const nextDueStr = nextDue.toISOString().split('T')[0];
+
+  // Avoid duplicates
+  const existing = await pool.query(
+    `SELECT id FROM subscriptions WHERE user_id = $1 AND due_date = $2`,
+    [sub.user_id, nextDueStr]
+  );
+  if (existing.rows.length > 0) return null;
+
+  const newSub = await pool.query(
+    `INSERT INTO subscriptions (user_id, amount, due_date, status) VALUES ($1, $2, $3, 'pending') RETURNING *`,
+    [sub.user_id, sub.amount, nextDueStr]
+  );
+  return newSub.rows[0];
+}
+
 router.post('/subscriptions/:id/pay', async (req, res) => {
   try {
     const result = await pool.query(
@@ -292,7 +321,16 @@ router.post('/subscriptions/:id/pay', async (req, res) => {
       [req.params.id]
     );
     if (result.rows.length === 0) return res.status(404).json({ message: 'Mensalidade não encontrada' });
-    res.json({ ...result.rows[0], amount: parseFloat(result.rows[0].amount) });
+    const sub = result.rows[0];
+
+    // Auto-generate next month for recurring clients
+    const nextSub = await autoGenerateNextSubscription(sub);
+
+    res.json({
+      ...sub,
+      amount: parseFloat(sub.amount),
+      next_subscription: nextSub ? { ...nextSub, amount: parseFloat(nextSub.amount) } : null,
+    });
   } catch (err) {
     console.error('Admin pay subscription error:', err);
     res.status(500).json({ message: 'Erro ao registrar pagamento' });
@@ -310,7 +348,19 @@ router.put('/subscriptions/:id/status', [
       [status, req.params.id]
     );
     if (result.rows.length === 0) return res.status(404).json({ message: 'Mensalidade não encontrada' });
-    res.json({ ...result.rows[0], amount: parseFloat(result.rows[0].amount) });
+    const sub = result.rows[0];
+
+    // Auto-generate next month if marked as paid
+    let nextSub = null;
+    if (status === 'paid') {
+      nextSub = await autoGenerateNextSubscription(sub);
+    }
+
+    res.json({
+      ...sub,
+      amount: parseFloat(sub.amount),
+      next_subscription: nextSub ? { ...nextSub, amount: parseFloat(nextSub.amount) } : null,
+    });
   } catch (err) {
     console.error('Admin update subscription status error:', err);
     res.status(500).json({ message: 'Erro ao atualizar status' });
