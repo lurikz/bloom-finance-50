@@ -91,9 +91,10 @@ export default function Transactions() {
     setDateFrom('');
     setDateTo('');
     setUseCustomPeriod(false);
+    setCurrentPage(1);
   };
 
-  useEffect(() => { load(); }, [month, year, useCustomPeriod]);
+  useEffect(() => { load(1); }, [month, year, useCustomPeriod]);
 
   const filteredCats = categories.filter(c => c.type === form.type);
 
