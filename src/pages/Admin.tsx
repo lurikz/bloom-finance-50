@@ -67,8 +67,9 @@ interface AdminDashData {
   monthlyRevenue: { month: string; total: number }[];
 }
 
-const STATUS_LABELS: Record<string, string> = { pending: 'Pendente', paid: 'Pago', overdue: 'Vencido' };
+const STATUS_LABELS: Record<string, string> = { pending: 'Pendente', paid: 'Pago', overdue: 'Atrasado' };
 const STATUS_COLORS: Record<string, string> = { pending: 'hsl(40,90%,55%)', paid: 'hsl(160,84%,39%)', overdue: 'hsl(0,84%,60%)' };
+const MONTH_NAMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const CLIENT_TYPE_LABELS: Record<string, string> = { recurring: 'Recorrente', lifetime: 'Vitalício' };
 
 export default function Admin() {
