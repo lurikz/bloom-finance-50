@@ -210,11 +210,10 @@ export default function Admin() {
       </div>
 
       <Tabs defaultValue="dashboard" className="space-y-4">
-        <TabsList className="grid grid-cols-5 w-full max-w-2xl">
+        <TabsList className="grid grid-cols-4 w-full max-w-2xl">
           <TabsTrigger value="dashboard" className="gap-1"><BarChart3 className="h-3.5 w-3.5" /> Dashboard</TabsTrigger>
           <TabsTrigger value="users" className="gap-1"><Users className="h-3.5 w-3.5" /> Usuários</TabsTrigger>
           <TabsTrigger value="billing" className="gap-1"><Receipt className="h-3.5 w-3.5" /> Cobranças</TabsTrigger>
-          <TabsTrigger value="subscriptions" className="gap-1"><CreditCard className="h-3.5 w-3.5" /> Mensalidades</TabsTrigger>
           <TabsTrigger value="system" className="gap-1"><Database className="h-3.5 w-3.5" /> Sistema</TabsTrigger>
         </TabsList>
 
@@ -423,49 +422,6 @@ export default function Admin() {
           </Dialog>
         </TabsContent>
 
-        {/* ========== SUBSCRIPTIONS (legacy) ========== */}
-        <TabsContent value="subscriptions" className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <Select value={subFilter} onValueChange={setSubFilter}>
-              <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas</SelectItem>
-                <SelectItem value="pending">Pendentes</SelectItem>
-                <SelectItem value="paid">Pagas</SelectItem>
-                <SelectItem value="overdue">Vencidas</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button className="gap-2" onClick={openCreateSub}><Plus className="h-4 w-4" /> Nova Mensalidade</Button>
-          </div>
-          <Card><CardContent className="p-0"><div className="overflow-x-auto">
-            <Table>
-              <TableHeader><TableRow>
-                <TableHead>Usuário</TableHead><TableHead>Valor</TableHead><TableHead>Vencimento</TableHead><TableHead>Status</TableHead><TableHead>Pago em</TableHead><TableHead className="text-right">Ações</TableHead>
-              </TableRow></TableHeader>
-              <TableBody>
-                {subsLoading ? (
-                  <TableRow><TableCell colSpan={6} className="text-center py-8"><Loader2 className="h-5 w-5 animate-spin mx-auto" /></TableCell></TableRow>
-                ) : subs.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhuma mensalidade</TableCell></TableRow>
-                ) : subs.map(s => (
-                  <TableRow key={s.id}>
-                    <TableCell><div><p className="font-medium text-sm">{s.user_name}</p><p className="text-xs text-muted-foreground">{s.user_email}</p></div></TableCell>
-                    <TableCell className="font-semibold">{formatCurrency(s.amount)}</TableCell>
-                    <TableCell className="text-sm">{new Date(s.due_date).toLocaleDateString('pt-BR')}</TableCell>
-                    <TableCell><Badge variant={s.status === 'paid' ? 'default' : s.status === 'overdue' ? 'destructive' : 'secondary'}>{STATUS_LABELS[s.status]}</Badge></TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{s.paid_at ? new Date(s.paid_at).toLocaleDateString('pt-BR') : '—'}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        {s.status !== 'paid' && <Button variant="ghost" size="icon" className="h-8 w-8 text-[hsl(var(--income))]" onClick={() => handlePaySub(s.id)} title="Marcar como pago"><CheckCircle className="h-4 w-4" /></Button>}
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDeleteSub(s.id)}><Trash2 className="h-4 w-4" /></Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div></CardContent></Card>
-        </TabsContent>
 
         {/* ========== SYSTEM ========== */}
         <TabsContent value="system" className="space-y-6">
