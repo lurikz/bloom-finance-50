@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const { pool } = require('../db/connection');
+const { createDefaultCategoriesForUser } = require('../db/init');
 
 const router = express.Router();
 
@@ -32,6 +33,10 @@ router.post('/register', [
       [name, email, hash]
     );
     const user = result.rows[0];
+
+    // Create default categories for the new user
+    await createDefaultCategoriesForUser(user.id);
+
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '7d' });
     res.status(201).json({ user, token });
   } catch (err) {
@@ -63,6 +68,13 @@ router.post('/login', [
     if (!valid) {
       return res.status(401).json({ message: 'Email ou senha incorretos' });
     }
+
+    // Ensure user has default categories (for users created before this feature)
+    const catCount = await pool.query('SELECT COUNT(*) FROM categories WHERE user_id = $1', [user.id]);
+    if (parseInt(catCount.rows[0].count) === 0) {
+      await createDefaultCategoriesForUser(user.id);
+    }
+
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '7d' });
     res.json({ user: { id: user.id, name: user.name, email: user.email }, token });
   } catch (err) {
@@ -71,17 +83,15 @@ router.post('/login', [
   }
 });
 
-// Forgot password (simplified — logs token to console)
+// Forgot password
 router.post('/forgot-password', [
   body('email').trim().isEmail().withMessage('Email inválido').normalizeEmail(),
 ], validate, async (req, res) => {
   try {
     const { email } = req.body;
     const result = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
-    // Always return success to prevent email enumeration
     if (result.rows.length > 0) {
       const resetToken = jwt.sign({ userId: result.rows[0].id, type: 'reset' }, process.env.JWT_SECRET, { expiresIn: '1h' });
-      // TODO: integrate with email service (SendGrid, Resend, etc.)
       console.log(`Password reset token for ${email}: ${resetToken}`);
     }
     res.json({ message: 'Se o email existir, um link será enviado' });

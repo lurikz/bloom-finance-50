@@ -12,11 +12,11 @@ const validate = (req, res, next) => {
   next();
 };
 
-// List (user's + defaults)
+// List (only user's own categories)
 router.get('/', async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT * FROM categories WHERE user_id = $1 OR is_default = TRUE ORDER BY type, name`,
+      `SELECT * FROM categories WHERE user_id = $1 ORDER BY type, name`,
       [req.userId]
     );
     res.json(result.rows);
@@ -46,7 +46,7 @@ router.post('/', [
   }
 });
 
-// Update
+// Update (any category owned by user)
 router.put('/:id', [
   body('name').optional().trim().notEmpty().withMessage('Nome é obrigatório').isLength({ max: 50 }),
   body('color').optional().matches(/^#[0-9A-Fa-f]{6}$/).withMessage('Cor inválida'),
@@ -61,25 +61,26 @@ router.put('/:id', [
     if (fields.length === 0) return res.status(400).json({ message: 'Nada para atualizar' });
     values.push(req.params.id, req.userId);
     const result = await pool.query(
-      `UPDATE categories SET ${fields.join(', ')} WHERE id = $${idx++} AND user_id = $${idx} AND is_default = FALSE RETURNING *`,
+      `UPDATE categories SET ${fields.join(', ')} WHERE id = $${idx++} AND user_id = $${idx} RETURNING *`,
       values
     );
-    if (result.rows.length === 0) return res.status(404).json({ message: 'Categoria não encontrada ou é padrão' });
+    if (result.rows.length === 0) return res.status(404).json({ message: 'Categoria não encontrada' });
     res.json(result.rows[0]);
   } catch (err) {
+    if (err.code === '23505') return res.status(400).json({ message: 'Categoria com esse nome já existe' });
     console.error(err);
     res.status(500).json({ message: 'Erro ao atualizar categoria' });
   }
 });
 
-// Delete (only user-owned, not defaults)
+// Delete (any category owned by user)
 router.delete('/:id', async (req, res) => {
   try {
     const result = await pool.query(
-      'DELETE FROM categories WHERE id = $1 AND user_id = $2 AND is_default = FALSE RETURNING id',
+      'DELETE FROM categories WHERE id = $1 AND user_id = $2 RETURNING id',
       [req.params.id, req.userId]
     );
-    if (result.rows.length === 0) return res.status(404).json({ message: 'Categoria não encontrada ou é padrão' });
+    if (result.rows.length === 0) return res.status(404).json({ message: 'Categoria não encontrada' });
     res.json({ message: 'Excluída' });
   } catch (err) {
     console.error(err);
