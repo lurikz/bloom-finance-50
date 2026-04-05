@@ -72,6 +72,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/fixed-expenses', fixedExpenseRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/savings', savingsRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Health check (includes DB connectivity test)
 app.get('/api/health', async (req, res) => {
