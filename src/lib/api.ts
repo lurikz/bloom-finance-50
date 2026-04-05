@@ -113,10 +113,12 @@ export const api = {
     request(`/admin/users/${id}/unblock`, { method: 'POST' }),
 
   // Admin - Subscriptions
-  getSubscriptions: (params?: { user_id?: string; status?: string }) => {
+  getSubscriptions: (params?: { user_id?: string; status?: string; month?: number; year?: number }) => {
     const query = new URLSearchParams();
     if (params?.user_id) query.set('user_id', params.user_id);
     if (params?.status) query.set('status', params.status);
+    if (params?.month) query.set('month', String(params.month));
+    if (params?.year) query.set('year', String(params.year));
     return request(`/admin/subscriptions?${query.toString()}`);
   },
   createSubscription: (data: { user_id: string; amount: number; due_date: string }) =>
