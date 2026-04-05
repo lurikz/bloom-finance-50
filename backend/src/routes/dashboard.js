@@ -74,6 +74,7 @@ router.get('/', async (req, res) => {
       categoryChart: categoryChart.rows.map(r => ({
         name: r.name,
         value: parseFloat(r.value),
+        color: r.color || null,
       })),
       recentTransactions: recent.rows,
     });

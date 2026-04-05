@@ -56,6 +56,7 @@ async function ensureDatabaseInitialized() {
       );
 
       ALTER TABLE transactions ADD COLUMN IF NOT EXISTS fixed_expense_id UUID REFERENCES fixed_expenses(id) ON DELETE SET NULL;
+      ALTER TABLE categories ADD COLUMN IF NOT EXISTS color VARCHAR(7);
 
       CREATE INDEX IF NOT EXISTS idx_transactions_user_date ON transactions(user_id, date);
       CREATE INDEX IF NOT EXISTS idx_categories_user ON categories(user_id);

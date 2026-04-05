@@ -60,8 +60,10 @@ export const api = {
 
   // Categories
   getCategories: () => request('/categories'),
-  createCategory: (data: { name: string; type: 'income' | 'expense' }) =>
+  createCategory: (data: { name: string; type: 'income' | 'expense'; color?: string }) =>
     request('/categories', { method: 'POST', body: JSON.stringify(data) }),
+  updateCategory: (id: string, data: { name?: string; color?: string }) =>
+    request(`/categories/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteCategory: (id: string) =>
     request(`/categories/${id}`, { method: 'DELETE' }),
 
