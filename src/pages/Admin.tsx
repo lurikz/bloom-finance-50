@@ -16,7 +16,7 @@ import {
   Settings, Database, Users, CreditCard, BarChart3,
   Plus, Trash2, Pencil, Lock, Unlock, CheckCircle, XCircle,
   Loader2, RefreshCw, DollarSign, AlertTriangle, TrendingUp,
-  Receipt, Clock,
+  Receipt, Clock, FileDown,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -195,6 +195,58 @@ export default function Admin() {
   const openCreateUser = () => { setUserForm({ name: '', email: '', password: '', client_type: 'recurring', plan_amount: '', due_day: '' }); setEditUser(null); setUserDialog('create'); };
   const openEditUser = (u: AdminUser) => { setUserForm({ name: u.name, email: u.email, password: '', client_type: u.client_type || 'recurring', plan_amount: u.plan_amount?.toString() || '', due_day: u.due_day?.toString() || '' }); setEditUser(u); setUserDialog('edit'); };
   const openCreateSub = () => { setSubForm({ user_id: '', amount: '', due_date: new Date().toISOString().split('T')[0] }); setSubDialog(true); };
+
+  const handleDownloadPdf = async () => {
+    const { default: jsPDF } = await import('jspdf');
+    const { default: autoTable } = await import('jspdf-autotable');
+    const doc = new jsPDF();
+    const now = new Date();
+
+    // Title & date
+    doc.setFontSize(18);
+    doc.text('Relatório de Cobranças', 14, 20);
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Gerado em: ${now.toLocaleDateString('pt-BR')} às ${now.toLocaleTimeString('pt-BR')}`, 14, 28);
+
+    const filterLabel = subFilter === 'all' ? 'Todos' : (STATUS_LABELS[subFilter] || subFilter);
+    const monthLabel = subMonth === 'all' ? 'Todos' : MONTH_NAMES[parseInt(subMonth) - 1];
+    const yearLabel = subYear === 'all' ? 'Todos' : subYear;
+    doc.text(`Filtros: Status: ${filterLabel} | Mês: ${monthLabel} | Ano: ${yearLabel}`, 14, 34);
+
+    // Summary
+    const totalReceived = filteredSubs.filter(s => s.status === 'paid').reduce((a, s) => a + s.amount, 0);
+    const totalPending = filteredSubs.filter(s => s.status === 'pending').reduce((a, s) => a + s.amount, 0);
+    const totalOverdue = filteredSubs.filter(s => s.status === 'overdue').reduce((a, s) => a + s.amount, 0);
+
+    doc.setFontSize(11);
+    doc.setTextColor(0);
+    doc.text('Resumo', 14, 44);
+    doc.setFontSize(10);
+    doc.text(`Total Recebido: ${formatCurrency(totalReceived)}`, 14, 51);
+    doc.text(`Total Pendente: ${formatCurrency(totalPending)}`, 14, 57);
+    doc.text(`Total Atrasado: ${formatCurrency(totalOverdue)}`, 14, 63);
+
+    // Table
+    const rows = filteredSubs.map(s => [
+      s.user_name,
+      formatCurrency(s.amount),
+      new Date(s.due_date).toLocaleDateString('pt-BR'),
+      s.is_lost ? 'Perdido' : (STATUS_LABELS[s.status] || s.status),
+      s.paid_at ? new Date(s.paid_at).toLocaleDateString('pt-BR') : '—',
+    ]);
+
+    autoTable(doc, {
+      startY: 70,
+      head: [['Usuário', 'Valor', 'Vencimento', 'Status', 'Pago em']],
+      body: rows,
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [30, 30, 30] },
+    });
+
+    const monthFile = subMonth === 'all' ? 'todos' : subMonth.padStart(2, '0');
+    doc.save(`relatorio-cobrancas-${monthFile}.pdf`);
+  };
 
   const requiredTables = ['users', 'categories', 'transactions', 'fixed_expenses', 'subscriptions'];
   const allTablesExist = dbStatus ? requiredTables.every((t: string) => dbStatus.tables?.includes(t)) : false;
@@ -377,6 +429,9 @@ export default function Admin() {
             <div className="flex gap-2">
               <Button variant="outline" className="gap-2" onClick={handleGenerateSubs} disabled={generating}>
                 {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} Gerar Cobranças
+              </Button>
+              <Button variant="outline" className="gap-2" onClick={handleDownloadPdf}>
+                <FileDown className="h-4 w-4" /> Gerar Relatório PDF
               </Button>
               <Button className="gap-2" onClick={openCreateSub}><Plus className="h-4 w-4" /> Nova Cobrança</Button>
             </div>
