@@ -261,10 +261,10 @@ router.get('/subscriptions', async (req, res) => {
       conditions.push(`s.status = $${idx++}`); params.push(status);
     }
     if (month && year) {
-      conditions.push(`EXTRACT(MONTH FROM s.due_date) = $${idx++}`); params.push(parseInt(month as string));
-      conditions.push(`EXTRACT(YEAR FROM s.due_date) = $${idx++}`); params.push(parseInt(year as string));
+      conditions.push(`EXTRACT(MONTH FROM s.due_date) = $${idx++}`); params.push(parseInt(month, 10));
+      conditions.push(`EXTRACT(YEAR FROM s.due_date) = $${idx++}`); params.push(parseInt(year, 10));
     } else if (year) {
-      conditions.push(`EXTRACT(YEAR FROM s.due_date) = $${idx++}`); params.push(parseInt(year as string));
+      conditions.push(`EXTRACT(YEAR FROM s.due_date) = $${idx++}`); params.push(parseInt(year, 10));
     }
     if (conditions.length) query += ' WHERE ' + conditions.join(' AND ');
     query += ' ORDER BY s.due_date DESC';
