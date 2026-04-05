@@ -43,6 +43,10 @@ export default function Categories() {
       toast({ title: 'Informe o nome', variant: 'destructive' });
       return;
     }
+    if (!/^#[0-9A-F]{6}$/i.test(color)) {
+      toast({ title: 'Escolha uma cor válida', variant: 'destructive' });
+      return;
+    }
     try {
       await api.createCategory({ name: name.trim(), type, color });
       toast({ title: 'Categoria criada!' });
