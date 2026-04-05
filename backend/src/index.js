@@ -15,8 +15,26 @@ const PORT = process.env.PORT || 3001;
 
 // Security middleware
 app.use(helmet());
+
+// CORS - allow multiple trusted origins
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://bloom-finance-50.lovable.app',
+  'https://evolution-bloom-frontend.exf0ty.easypanel.host',
+];
+if (process.env.FRONTEND_URL) {
+  const extra = process.env.FRONTEND_URL.split(',').map(s => s.trim()).filter(Boolean);
+  extra.forEach(o => { if (!allowedOrigins.includes(o)) allowedOrigins.push(o); });
+}
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
 }));
 app.use(express.json({ limit: '1mb' }));
