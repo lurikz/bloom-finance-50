@@ -18,6 +18,7 @@ const categoryRoutes = require('./routes/categories');
 const dashboardRoutes = require('./routes/dashboard');
 const reportRoutes = require('./routes/reports');
 const fixedExpenseRoutes = require('./routes/fixedExpenses');
+const adminRoutes = require('./routes/admin');
 const { ensureDatabaseInitialized } = require('./db/init');
 
 const app = express();
