@@ -99,6 +99,10 @@ export default function Transactions() {
         toast({ title: 'Gasto fixo e transações recorrentes criados!' });
       } else {
         await api.createTransaction({ ...form, amount, description: form.description.trim() });
+        // If adding to a saving, deposit the amount
+        if (addToSaving && selectedSavingId && form.type === 'expense') {
+          await api.depositSaving(selectedSavingId, { amount, description: `Depósito via transação: ${form.description.trim()}` });
+        }
         toast({ title: 'Transação criada!' });
       }
       setDialogOpen(false);
