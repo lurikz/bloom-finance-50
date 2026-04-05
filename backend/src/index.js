@@ -1,5 +1,13 @@
 require('dotenv').config();
 const express = require('express');
+
+// Validate required env vars at startup
+const requiredEnv = ['DATABASE_URL', 'JWT_SECRET'];
+const missing = requiredEnv.filter(k => !process.env[k]);
+if (missing.length > 0) {
+  console.error(`❌ Missing required environment variables: ${missing.join(', ')}`);
+  process.exit(1);
+}
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
