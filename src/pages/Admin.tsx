@@ -115,8 +115,8 @@ export default function Admin() {
     try {
       const params: any = {};
       if (subFilter !== 'all') params.status = subFilter;
-      if (subMonth) params.month = parseInt(subMonth);
-      if (subYear) params.year = parseInt(subYear);
+      if (subMonth !== 'all') params.month = parseInt(subMonth);
+      if (subYear !== 'all') params.year = parseInt(subYear);
       setSubs(await api.getSubscriptions(Object.keys(params).length ? params : undefined));
     } catch { } finally { setSubsLoading(false); }
   };
