@@ -63,7 +63,8 @@ async function ensureDatabaseInitialized() {
       ALTER TABLE transactions ADD COLUMN IF NOT EXISTS fixed_expense_id UUID REFERENCES fixed_expenses(id) ON DELETE SET NULL;
       ALTER TABLE categories ADD COLUMN IF NOT EXISTS color VARCHAR(7);
 
-      CREATE UNIQUE INDEX IF NOT EXISTS idx_categories_default_unique ON categories (name, type) WHERE user_id IS NULL AND is_default = TRUE;
+      DROP INDEX IF EXISTS idx_categories_default_unique;
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_categories_default_unique ON categories (name, type) WHERE is_default = TRUE AND user_id IS NULL;
 
       CREATE INDEX IF NOT EXISTS idx_transactions_user_date ON transactions(user_id, date);
       CREATE INDEX IF NOT EXISTS idx_categories_user ON categories(user_id);
@@ -88,14 +89,13 @@ async function ensureDatabaseInitialized() {
     );
 
     for (const [name, type, color] of defaults) {
+      // Upsert: insert or update color if already exists
       await client.query(
-        `INSERT INTO categories (name, type, user_id, is_default, color) VALUES ($1, $2, NULL, TRUE, $3) ON CONFLICT DO NOTHING`,
+        `INSERT INTO categories (name, type, user_id, is_default, color)
+         VALUES ($1, $2, NULL, TRUE, $3)
+         ON CONFLICT (name, type) WHERE is_default = TRUE AND user_id IS NULL
+         DO UPDATE SET color = COALESCE(categories.color, EXCLUDED.color)`,
         [name, type, color]
-      );
-      // Update color for existing defaults that don't have one yet
-      await client.query(
-        `UPDATE categories SET color = $1 WHERE name = $2 AND type = $3 AND is_default = TRUE AND user_id IS NULL AND color IS NULL`,
-        [color, name, type]
       );
     }
 
