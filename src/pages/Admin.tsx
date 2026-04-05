@@ -399,7 +399,7 @@ export default function Admin() {
                     <TableCell className="text-sm">{new Date(s.due_date).toLocaleDateString('pt-BR')}</TableCell>
                     <TableCell>
                       <Badge variant={s.status === 'paid' ? 'default' : s.status === 'overdue' ? 'destructive' : 'secondary'}>
-                        {STATUS_LABELS[s.status]}
+                        {s.is_lost ? 'Perdido' : STATUS_LABELS[s.status]}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">{s.paid_at ? new Date(s.paid_at).toLocaleDateString('pt-BR') : '—'}</TableCell>
