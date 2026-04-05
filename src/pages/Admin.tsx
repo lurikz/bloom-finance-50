@@ -126,8 +126,8 @@ export default function Admin() {
 
               {/* Column check */}
               <div className="flex items-center gap-2 text-sm">
-                {status?.hasFixedExpenseColumn ? (
-                  <><CheckCircle className="h-4 w-4 text-[hsl(var(--income))]" /> Coluna <code className="bg-secondary px-1 rounded text-xs">fixed_expense_id</code> existe em transactions</>
+              {status?.hasFixedExpenseColumn ? (
+                  <><CheckCircle className="h-4 w-4 text-primary" /> Coluna <code className="bg-secondary px-1 rounded text-xs">fixed_expense_id</code> existe em transactions</>
                 ) : (
                   <><XCircle className="h-4 w-4 text-amber-500" /> Coluna <code className="bg-secondary px-1 rounded text-xs">fixed_expense_id</code> não encontrada — necessita implementar</>
                 )}
