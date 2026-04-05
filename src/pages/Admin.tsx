@@ -565,6 +565,124 @@ export default function Admin() {
           </Dialog>
         </TabsContent>
 
+        {/* ========== NOTIFICATIONS ========== */}
+        <TabsContent value="notifications" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Send form */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2"><Send className="h-4 w-4 text-primary" /> Enviar Notificação</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSendNotification} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Título</Label>
+                    <Input value={notifForm.title} onChange={(e) => setNotifForm({ ...notifForm, title: e.target.value })} placeholder="Título da notificação" maxLength={200} required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Mensagem</Label>
+                    <textarea
+                      className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 min-h-[100px] resize-y"
+                      value={notifForm.message}
+                      onChange={(e) => setNotifForm({ ...notifForm, message: e.target.value })}
+                      placeholder="Mensagem da notificação..."
+                      maxLength={2000}
+                      required
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Tipo</Label>
+                      <Select value={notifForm.type} onValueChange={(v) => setNotifForm({ ...notifForm, type: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="system">Sistema</SelectItem>
+                          <SelectItem value="alert">Alerta</SelectItem>
+                          <SelectItem value="reminder">Lembrete</SelectItem>
+                          <SelectItem value="income">Financeiro (entrada)</SelectItem>
+                          <SelectItem value="expense">Financeiro (saída)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Destinatário</Label>
+                      <Select value={notifForm.target} onValueChange={(v) => setNotifForm({ ...notifForm, target: v, target_user_id: '' })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todos os usuários</SelectItem>
+                          <SelectItem value="user">Usuário específico</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {notifForm.target === 'user' && (
+                    <div className="space-y-2">
+                      <Label>Buscar usuário</Label>
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input className="pl-9" value={userSearch} onChange={(e) => setUserSearch(e.target.value)} placeholder="Nome ou email..." />
+                      </div>
+                      <Select value={notifForm.target_user_id} onValueChange={(v) => setNotifForm({ ...notifForm, target_user_id: v })}>
+                        <SelectTrigger><SelectValue placeholder="Selecione o usuário" /></SelectTrigger>
+                        <SelectContent>
+                          {filteredUsersForNotif.map(u => (
+                            <SelectItem key={u.id} value={u.id}>{u.name} ({u.email})</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  <Button type="submit" className="w-full gap-2" disabled={notifSending}>
+                    {notifSending ? <><Loader2 className="h-4 w-4 animate-spin" /> Enviando...</> : <><Send className="h-4 w-4" /> Enviar Notificação</>}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+
+            {/* History */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2"><Clock className="h-4 w-4" /> Histórico de Envios</CardTitle>
+                <Button variant="outline" size="sm" onClick={loadNotifHistory} disabled={notifLoading}>
+                  <RefreshCw className={`h-4 w-4 ${notifLoading ? 'animate-spin' : ''}`} />
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {notifLoading && notifHistory.length === 0 ? (
+                  <div className="flex items-center justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+                ) : notifHistory.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-10">Nenhuma notificação enviada ainda.</p>
+                ) : (
+                  <div className="space-y-3 max-h-[500px] overflow-y-auto">
+                    {notifHistory.map(n => (
+                      <div key={n.id} className="flex items-start gap-3 p-3 rounded-lg border border-border bg-background">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium text-foreground truncate">{n.title}</p>
+                            <Badge variant="secondary" className="text-[10px] shrink-0">{NOTIF_TYPE_LABELS[n.type] || n.type}</Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{n.message}</p>
+                          <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground">
+                            <span>{new Date(n.created_at).toLocaleString('pt-BR')}</span>
+                            <span>
+                              {n.target === 'all' ? '→ Todos' : `→ ${n.target_user_name || n.target_user_email || 'Usuário'}`}
+                            </span>
+                            <span>{n.read_count}/{n.total_recipients} leram</span>
+                          </div>
+                        </div>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => handleDeleteNotif(n.id)}>
+                          <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
 
         {/* ========== SYSTEM ========== */}
         <TabsContent value="system" className="space-y-6">
