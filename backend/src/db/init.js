@@ -1,0 +1,71 @@
+require('dotenv').config();
+const { pool } = require('./connection');
+
+async function init() {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    await client.query(`
+      CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+      CREATE TABLE IF NOT EXISTS users (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        name VARCHAR(100) NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS categories (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        name VARCHAR(50) NOT NULL,
+        type VARCHAR(10) NOT NULL CHECK (type IN ('income', 'expense')),
+        user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+        is_default BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(name, type, user_id)
+      );
+
+      CREATE TABLE IF NOT EXISTS transactions (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        description VARCHAR(100) NOT NULL,
+        amount DECIMAL(12,2) NOT NULL CHECK (amount > 0),
+        type VARCHAR(10) NOT NULL CHECK (type IN ('income', 'expense')),
+        category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        date DATE NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_transactions_user_date ON transactions(user_id, date);
+      CREATE INDEX IF NOT EXISTS idx_categories_user ON categories(user_id);
+    `);
+
+    // Default categories
+    const defaults = [
+      ['Salário', 'income'], ['Freelance', 'income'], ['Investimentos', 'income'], ['Outros', 'income'],
+      ['Alimentação', 'expense'], ['Transporte', 'expense'], ['Moradia', 'expense'], ['Saúde', 'expense'],
+      ['Educação', 'expense'], ['Lazer', 'expense'], ['Vestuário', 'expense'], ['Outros', 'expense'],
+    ];
+
+    for (const [name, type] of defaults) {
+      await client.query(
+        `INSERT INTO categories (name, type, user_id, is_default) VALUES ($1, $2, NULL, TRUE) ON CONFLICT DO NOTHING`,
+        [name, type]
+      );
+    }
+
+    await client.query('COMMIT');
+    console.log('Database initialized successfully!');
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Error initializing database:', err);
+    throw err;
+  } finally {
+    client.release();
+    await pool.end();
+  }
+}
+
+init();
