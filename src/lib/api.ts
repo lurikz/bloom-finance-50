@@ -73,6 +73,15 @@ export const api = {
     return request(`/dashboard?${query.toString()}`);
   },
 
+  // Fixed Expenses
+  getFixedExpenses: () => request('/fixed-expenses'),
+  createFixedExpense: (data: { description: string; amount: number; category_id: string; start_date: string; recurrence_months: number }) =>
+    request('/fixed-expenses', { method: 'POST', body: JSON.stringify(data) }),
+  updateFixedExpense: (id: string, data: any) =>
+    request(`/fixed-expenses/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteFixedExpense: (id: string) =>
+    request(`/fixed-expenses/${id}`, { method: 'DELETE' }),
+
   // Reports
   getMonthlyReport: (params?: { month?: number; year?: number }) => {
     const query = new URLSearchParams();

@@ -1,6 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { LayoutDashboard, ArrowLeftRight, Tags, FileText, LogOut, Menu, X, Wallet } from 'lucide-react';
+import { LayoutDashboard, ArrowLeftRight, Tags, FileText, LogOut, Menu, X, Wallet, Repeat } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 
@@ -8,6 +8,7 @@ const links = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/transactions', icon: ArrowLeftRight, label: 'Transações' },
   { to: '/categories', icon: Tags, label: 'Categorias' },
+  { to: '/fixed-expenses', icon: Repeat, label: 'Gastos Fixos' },
   { to: '/reports', icon: FileText, label: 'Relatórios' },
 ];
 

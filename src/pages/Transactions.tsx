@@ -31,6 +31,8 @@ export default function Transactions() {
   const { toast } = useToast();
 
   const [form, setForm] = useState({ description: '', amount: '', type: 'expense' as 'income' | 'expense', category_id: '', date: new Date().toISOString().split('T')[0] });
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurrenceMonths, setRecurrenceMonths] = useState('12');
 
   const load = () => {
     setLoading(true);
@@ -47,12 +49,16 @@ export default function Transactions() {
   const openCreate = () => {
     setEditing(null);
     setForm({ description: '', amount: '', type: 'expense', category_id: '', date: new Date().toISOString().split('T')[0] });
+    setIsRecurring(false);
+    setRecurrenceMonths('12');
     setDialogOpen(true);
   };
 
   const openEdit = (t: Transaction) => {
     setEditing(t);
     setForm({ description: t.description, amount: String(t.amount), type: t.type, category_id: t.category_id, date: t.date.split('T')[0] });
+    setIsRecurring(false);
+    setRecurrenceMonths('12');
     setDialogOpen(true);
   };
 
@@ -71,6 +77,20 @@ export default function Transactions() {
       if (editing) {
         await api.updateTransaction(editing.id, { ...form, amount, description: form.description.trim() });
         toast({ title: 'Transação atualizada!' });
+      } else if (isRecurring && form.type === 'expense') {
+        const months = parseInt(recurrenceMonths);
+        if (isNaN(months) || months < 1) {
+          toast({ title: 'Meses de recorrência inválido', variant: 'destructive' });
+          return;
+        }
+        await api.createFixedExpense({
+          description: form.description.trim(),
+          amount,
+          category_id: form.category_id,
+          start_date: form.date,
+          recurrence_months: months,
+        });
+        toast({ title: 'Gasto fixo e transações recorrentes criados!' });
       } else {
         await api.createTransaction({ ...form, amount, description: form.description.trim() });
         toast({ title: 'Transação criada!' });
@@ -148,6 +168,26 @@ export default function Transactions() {
                     </Select>
                   </div>
                 </div>
+                {!editing && form.type === 'expense' && (
+                  <div className="space-y-3 rounded-lg border border-border p-3">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="recurring"
+                        checked={isRecurring}
+                        onChange={(e) => setIsRecurring(e.target.checked)}
+                        className="h-4 w-4 rounded border-border"
+                      />
+                      <Label htmlFor="recurring" className="cursor-pointer text-sm">Esta transação é recorrente?</Label>
+                    </div>
+                    {isRecurring && (
+                      <div className="space-y-2">
+                        <Label>Por quantos meses?</Label>
+                        <Input type="number" min="1" max="120" value={recurrenceMonths} onChange={(e) => setRecurrenceMonths(e.target.value)} />
+                      </div>
+                    )}
+                  </div>
+                )}
                 <Button type="submit" className="w-full">{editing ? 'Salvar' : 'Criar'}</Button>
               </form>
             </DialogContent>
