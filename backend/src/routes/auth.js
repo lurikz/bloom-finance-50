@@ -80,12 +80,43 @@ router.post('/login', [
       await createDefaultCategoriesForUser(user.id);
     }
 
-    const isAdmin = email === ADMIN_EMAIL;
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    res.json({ user: { id: user.id, name: user.name, email: user.email, is_admin: isAdmin }, token });
+    res.json({ user: { id: user.id, name: user.name, email: user.email, is_admin: false }, token });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Erro ao fazer login' });
+  }
+});
+
+// Admin Login - separate credentials
+router.post('/admin-login', [
+  body('username').trim().notEmpty().withMessage('Usuário é obrigatório'),
+  body('password').notEmpty().withMessage('Senha é obrigatória'),
+], validate, async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    if (username !== ADMIN_USERNAME) {
+      return res.status(403).json({ message: 'Acesso negado' });
+    }
+
+    const valid = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
+    if (!valid) {
+      return res.status(403).json({ message: 'Acesso negado' });
+    }
+
+    // Find admin user by email to get their userId
+    const result = await pool.query('SELECT id, name, email FROM users WHERE email = $1', [ADMIN_EMAIL]);
+    if (result.rows.length === 0) {
+      return res.status(403).json({ message: 'Conta de administrador não encontrada. Registre-se primeiro com o email do admin.' });
+    }
+
+    const user = result.rows[0];
+    const token = jwt.sign({ userId: user.id, isAdmin: true }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    res.json({ user: { id: user.id, name: user.name, email: user.email, is_admin: true }, token });
+  } catch (err) {
+    console.error('Admin login error:', err);
+    res.status(500).json({ message: 'Erro ao fazer login admin' });
   }
 });
 
