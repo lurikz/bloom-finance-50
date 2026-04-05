@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Trash2, Pencil, TrendingUp, TrendingDown } from 'lucide-react';
+import { Plus, Trash2, Pencil, TrendingUp, TrendingDown, Search, Filter, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNotifications } from '@/contexts/NotificationContext';
 
@@ -34,21 +34,55 @@ export default function Transactions() {
   const [editing, setEditing] = useState<Transaction | null>(null);
   const { toast } = useToast();
 
+  // Advanced filters
+  const [showFilters, setShowFilters] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState('all');
+  const [filterCategory, setFilterCategory] = useState('all');
+  const [minAmount, setMinAmount] = useState('');
+  const [maxAmount, setMaxAmount] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [useCustomPeriod, setUseCustomPeriod] = useState(false);
+
   const [form, setForm] = useState({ description: '', amount: '', type: 'expense' as 'income' | 'expense', category_id: '', date: new Date().toISOString().split('T')[0] });
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurrenceMonths, setRecurrenceMonths] = useState('12');
   const [addToSaving, setAddToSaving] = useState(false);
   const [selectedSavingId, setSelectedSavingId] = useState('');
 
+  const hasActiveFilters = searchTerm || filterType !== 'all' || filterCategory !== 'all' || minAmount || maxAmount || dateFrom || dateTo;
+
   const load = () => {
     setLoading(true);
-    Promise.all([api.getTransactions({ month, year }), api.getCategories(), api.getSavings().catch(() => [])])
+    const params: any = {};
+    if (!useCustomPeriod) { params.month = month; params.year = year; }
+    if (searchTerm.trim()) params.search = searchTerm.trim();
+    if (filterType !== 'all') params.type = filterType;
+    if (filterCategory !== 'all') params.category = filterCategory;
+    if (minAmount) params.min_amount = parseFloat(minAmount);
+    if (maxAmount) params.max_amount = parseFloat(maxAmount);
+    if (dateFrom) params.date_from = dateFrom;
+    if (dateTo) params.date_to = dateTo;
+
+    Promise.all([api.getTransactions(params), api.getCategories(), api.getSavings().catch(() => [])])
       .then(([t, c, s]) => { setTransactions(t); setCategories(c); setSavings(s); })
       .catch(() => {})
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { load(); }, [month, year]);
+  const clearFilters = () => {
+    setSearchTerm('');
+    setFilterType('all');
+    setFilterCategory('all');
+    setMinAmount('');
+    setMaxAmount('');
+    setDateFrom('');
+    setDateTo('');
+    setUseCustomPeriod(false);
+  };
+
+  useEffect(() => { load(); }, [month, year, useCustomPeriod]);
 
   const filteredCats = categories.filter(c => c.type === form.type);
 
