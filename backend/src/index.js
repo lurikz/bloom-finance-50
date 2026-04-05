@@ -27,10 +27,7 @@ const { ensureDatabaseInitialized } = require('./db/init');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Security middleware
-app.use(helmet());
-
-// CORS - allow multiple trusted origins
+// CORS - allow multiple trusted origins (must be before helmet)
 const allowedOrigins = [
   'http://localhost:5173',
   'https://bloom-finance-50.lovable.app',
@@ -41,9 +38,8 @@ if (process.env.FRONTEND_URL) {
   extra.forEach(o => { if (!allowedOrigins.includes(o)) allowedOrigins.push(o); });
 }
 
-app.use(cors({
+const corsOptions = {
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, curl, health checks)
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
     console.warn(`CORS blocked origin: ${origin}`);
@@ -52,7 +48,14 @@ app.use(cors({
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+};
+
+// Handle preflight for all routes
+app.options('*', cors(corsOptions));
+app.use(cors(corsOptions));
+
+// Security middleware (after CORS so preflight works)
+app.use(helmet());
 app.use(express.json({ limit: '1mb' }));
 
 // Rate limiting for auth routes
