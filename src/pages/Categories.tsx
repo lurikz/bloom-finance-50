@@ -78,11 +78,12 @@ const GradientColorPicker = ({ value, onChange }: { value: string; onChange: (c:
           width={300}
           height={150}
           className="w-full h-[120px]"
-          onClick={handleGradientClick}
-          onMouseDown={() => setIsDragging(true)}
-          onMouseUp={() => setIsDragging(false)}
+          onClick={(e) => { e.stopPropagation(); handleGradientClick(e); }}
+          onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); setIsDragging(true); }}
+          onMouseUp={(e) => { e.stopPropagation(); setIsDragging(false); }}
           onMouseLeave={() => setIsDragging(false)}
-          onMouseMove={handleMove}
+          onMouseMove={(e) => { e.stopPropagation(); handleMove(e); }}
+          onPointerDown={(e) => { e.stopPropagation(); }}
         />
       </div>
       <div className="flex items-center gap-3">
