@@ -93,8 +93,8 @@ export default function Admin() {
   const [subs, setSubs] = useState<Subscription[]>([]);
   const [subsLoading, setSubsLoading] = useState(false);
   const [subFilter, setSubFilter] = useState('all');
-  const [subMonth, setSubMonth] = useState('');
-  const [subYear, setSubYear] = useState('');
+  const [subMonth, setSubMonth] = useState('all');
+  const [subYear, setSubYear] = useState('all');
   const [subDialog, setSubDialog] = useState(false);
   const [subForm, setSubForm] = useState({ user_id: '', amount: '', due_date: '' });
   const [generating, setGenerating] = useState(false);
@@ -115,8 +115,8 @@ export default function Admin() {
     try {
       const params: any = {};
       if (subFilter !== 'all') params.status = subFilter;
-      if (subMonth) params.month = parseInt(subMonth);
-      if (subYear) params.year = parseInt(subYear);
+      if (subMonth !== 'all') params.month = parseInt(subMonth);
+      if (subYear !== 'all') params.year = parseInt(subYear);
       setSubs(await api.getSubscriptions(Object.keys(params).length ? params : undefined));
     } catch { } finally { setSubsLoading(false); }
   };
@@ -362,14 +362,14 @@ export default function Admin() {
               <Select value={subMonth} onValueChange={setSubMonth}>
                 <SelectTrigger className="w-[140px]"><SelectValue placeholder="Mês" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os meses</SelectItem>
+                  <SelectItem value="all">Todos os meses</SelectItem>
                   {MONTH_NAMES.map((m, i) => <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>)}
                 </SelectContent>
               </Select>
               <Select value={subYear} onValueChange={setSubYear}>
                 <SelectTrigger className="w-[110px]"><SelectValue placeholder="Ano" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
                   {[2024, 2025, 2026, 2027].map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
                 </SelectContent>
               </Select>
